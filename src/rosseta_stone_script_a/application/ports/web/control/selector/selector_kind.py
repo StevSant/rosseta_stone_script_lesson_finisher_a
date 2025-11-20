@@ -7,3 +7,4 @@ class SelectorKind(Enum):
     LABEL = "label"
     PLACEHOLDER = "placeholder"
     TEXT = "text"
+    CSS = "css"

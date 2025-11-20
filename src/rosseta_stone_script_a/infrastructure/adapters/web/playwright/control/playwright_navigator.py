@@ -24,7 +24,7 @@ class NavigatorAdapter(NavigatorPort, LoggingMixin):
         self.logger.info(f"Current page title: {title}")
         return title
 
-    async def wait_for_load(self) -> None:
+    async def wait_for_load(self, timeout: int = 30000) -> None:
         """Wait for the page to fully load."""
         self.logger.info("Waiting for page to load...")
-        await self._page.wait_for_load_state("networkidle")
+        await self._page.wait_for_load_state("networkidle", timeout=timeout)

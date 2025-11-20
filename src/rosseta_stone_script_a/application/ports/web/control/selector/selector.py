@@ -29,6 +29,11 @@ class Selector:
         return Selector(kind=SelectorKind.TEXT, value=pattern)
 
     @staticmethod
+    def by_css(pattern: str) -> "Selector":
+        """Create selector by CSS pattern."""
+        return Selector(kind=SelectorKind.CSS, value=pattern)
+
+    @staticmethod
     def test_id(test_id: str) -> "Selector":
         """Create selector by test ID."""
         return Selector(kind=SelectorKind.TEST_ID, value=test_id)

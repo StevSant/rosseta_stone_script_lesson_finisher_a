@@ -53,6 +53,10 @@ class SelectorConverter(LoggingMixin):
         if kind == SelectorKind.TEXT:
             return self._convert_text_selector(selector, scope)
 
+        if kind == SelectorKind.CSS:
+            self.logger.info(f"[convert] CSS value={selector.value!r}")
+            return scope.locator(selector.value)
+
         # Future: CSS passthrough could be added here
         raise NotImplementedError(f"SelectorKind not supported: {kind}")
 

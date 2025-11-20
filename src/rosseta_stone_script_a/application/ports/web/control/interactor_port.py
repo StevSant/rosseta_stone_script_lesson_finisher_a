@@ -13,6 +13,7 @@ class InteractorPort(ABC):
     async def exists(
         self,
         target: Union[Selector, object],
+        timeout: int = 0,
     ) -> bool: ...
 
     @abstractmethod
