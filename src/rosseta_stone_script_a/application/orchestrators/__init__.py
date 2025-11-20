@@ -11,14 +11,14 @@ Orchestrators follow Clean Architecture principles:
 
 from .complete_lesson_workflow import CompleteLessonWorkflow
 from .full_learning_session import FullLearningSession
-from .open_fluency_builder import OpenFluencyBuilder
+from .open_fundations import OpenFundations
 
 from .select_activity_workflow import SelectActivityWorkflow
 from .select_course_workflow import SelectCourseWorkflow
 from .select_lesson_workflow import SelectLessonWorkflow
 
 __all__ = [
-    "OpenFluencyBuilder",
+    "OpenFundations",
     "CompleteLessonWorkflow",
     "FullLearningSession",
     "SelectActivityWorkflow",

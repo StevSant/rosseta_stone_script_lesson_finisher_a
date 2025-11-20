@@ -56,7 +56,6 @@ class LoginPage(AuthPort):
         )
         self.logger.info("Navigated to login URL")
 
-        await self.web_session.cookie_consent.dismiss()
         await self.web_session.debug_dumpper.dump_screenshot("before_login")
 
         # Fill email using interactor with Selector

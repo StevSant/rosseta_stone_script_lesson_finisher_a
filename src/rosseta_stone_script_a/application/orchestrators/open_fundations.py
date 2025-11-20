@@ -1,6 +1,6 @@
 from rosseta_stone_script_a.application.ports.orchestrator import OrchestratorPort
 from rosseta_stone_script_a.application.use_cases.go_to_fluency_builder import (
-    GoToFluencyBuilderUseCase,
+    GoToFundationsUseCase,
 )
 from rosseta_stone_script_a.application.use_cases.login_rosseta import (
     LoginRossetaUseCase,
@@ -8,7 +8,7 @@ from rosseta_stone_script_a.application.use_cases.login_rosseta import (
 from rosseta_stone_script_a.domain.entities.credentials import Credentials
 
 
-class OpenFluencyBuilder(OrchestratorPort):
+class OpenFundations(OrchestratorPort):
     """
     Orchestrator that composes login and navigation to Fluency Builder.
 
@@ -22,7 +22,7 @@ class OpenFluencyBuilder(OrchestratorPort):
     def __init__(
         self,
         login_use_case: LoginRossetaUseCase,
-        navigate_use_case: GoToFluencyBuilderUseCase,
+        navigate_use_case: GoToFundationsUseCase,
     ):
         super().__init__()
         self.login_use_case = login_use_case

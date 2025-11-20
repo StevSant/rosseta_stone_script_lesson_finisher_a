@@ -4,7 +4,6 @@ from typing import AsyncIterator
 from playwright.async_api import Browser, BrowserContext, Page
 
 from rosseta_stone_script_a.application.ports.web import (
-    CookieConsentPort,
     DebugDumperPort,
     InteractorPort,
     IWebSession,
@@ -16,7 +15,6 @@ from rosseta_stone_script_a.shared.mixins.loggin_mixin import LoggingMixin
 from ..common import Viewport
 from ..control import InteractorAdapter, NavigatorAdapter, ScreenshotterAdapter
 from ..diagnostics.playwright_debug_dumper import PlaywrightFileDebugDumperAdapter
-from ..helpers.cookie_consent import CookieConsentAdapter
 
 
 class PlaywrightWebSession(IWebSession, LoggingMixin):
@@ -43,7 +41,6 @@ class PlaywrightWebSession(IWebSession, LoggingMixin):
         self.screenshotter: ScreenShootterPort | None = None
 
         self.debug_dumpper: DebugDumperPort | None = None
-        self.cookie_consent: CookieConsentPort | None = None
 
     @asynccontextmanager
     async def session(self) -> AsyncIterator["PlaywrightWebSession"]:
@@ -94,6 +91,5 @@ class PlaywrightWebSession(IWebSession, LoggingMixin):
         self.logger.info("Performing initial setup...")
         self.navigator = NavigatorAdapter(self._page)
         self.interactor = InteractorAdapter(self._page)
-        self.cookie_consent = CookieConsentAdapter(self.interactor)
         self.screenshotter = ScreenshotterAdapter(self._page)
         self.debug_dumpper = PlaywrightFileDebugDumperAdapter(self.screenshotter)

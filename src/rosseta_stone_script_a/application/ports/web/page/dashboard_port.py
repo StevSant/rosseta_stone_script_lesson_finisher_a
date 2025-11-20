@@ -12,6 +12,6 @@ class DashboardPagePort(ABC, LoggingMixin):
     """
 
     @abstractmethod
-    async def open_fluency_builder(self) -> None:
-        """Navigate to Fluency Builder from the dashboard (e.g., click on 'Fluency Builder')."""
+    async def open_foundations(self) -> None:
+        """Navigate to Foundations from the dashboard (e.g., click on 'Foundations')."""
         ...

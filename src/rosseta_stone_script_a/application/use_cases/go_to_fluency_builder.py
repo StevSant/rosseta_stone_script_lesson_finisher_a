@@ -4,7 +4,7 @@ from rosseta_stone_script_a.application.ports.web.page import DashboardPagePort
 from ..ports.use_case import UseCasePort
 
 
-class GoToFluencyBuilderUseCase(UseCasePort):
+class GoToFundationsUseCase(UseCasePort):
     """
     Use case for navigating to Fluency Builder from the dashboard.
     Handles the initial navigation after login.
@@ -15,9 +15,9 @@ class GoToFluencyBuilderUseCase(UseCasePort):
         self.dashboard_page = dashboard_page
 
     async def execute(self) -> None:
-        """Navigate to Fluency Builder from dashboard."""
-        self.logger.info("Navigating to Fluency Builder from dashboard")
-        await self.dashboard_page.open_fluency_builder()
+        """Navigate to Foundations from dashboard."""
+        self.logger.info("Navigating to Foundations from dashboard")
+        await self.dashboard_page.open_foundations()
 
         # Wait for page to load
         await self.web_session.navigator.wait_for_load()

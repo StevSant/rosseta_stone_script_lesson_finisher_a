@@ -9,7 +9,7 @@ from .control import (
 )
 
 # Diagnostics and debugging
-from .diagnostics import CookieConsentPort, DebugDumperPort
+from .diagnostics import  DebugDumperPort
 
 # Page-specific interfaces
 from .page import AuthPort
@@ -28,6 +28,5 @@ __all__ = [
     # Page-specific interfaces
     "AuthPort",
     # Diagnostics and debugging
-    "CookieConsentPort",
     "DebugDumperPort",
 ]

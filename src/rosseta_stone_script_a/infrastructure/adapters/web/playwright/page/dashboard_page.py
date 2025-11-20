@@ -19,24 +19,18 @@ class DashboardPage(DashboardPagePort):
         self.web_session = web_session
 
         # Selectors for Fluency Builder navigation
-        self.FLUENCY_BUILDER_LINK = Selector.by_text(LessonPatterns.FLUENCY_BUILDER)
-        self.FLUENCY_BUILDER_BTN = Selector.role_button(LessonPatterns.FLUENCY_BUILDER)
+        self.FOUNDATIONS_BTN = Selector.by_text(LessonPatterns.FOUNDATIONS)
 
-    async def open_fluency_builder(self) -> None:
-        """Navigate to Fluency Builder from the dashboard."""
-        self.logger.info("Attempting to open Fluency Builder")
+    async def open_foundations(self) -> None:
+        """Navigate to Foundations from the dashboard."""
+        self.logger.info("Attempting to open Foundations from dashboard")
         # Try button first, then link
         try:
             if await self.web_session.interactor.exists(
-                self.FLUENCY_BUILDER_BTN, timeout=2000
+                self.FOUNDATIONS_BTN, timeout=2000
             ):
                 self.logger.info("Found Fluency Builder button, clicking it")
-                await self.web_session.interactor.click(self.FLUENCY_BUILDER_BTN)
-            elif await self.web_session.interactor.exists(
-                self.FLUENCY_BUILDER_LINK, timeout=2000
-            ):
-                self.logger.info("Found Fluency Builder link, clicking it")
-                await self.web_session.interactor.click(self.FLUENCY_BUILDER_LINK)
+                await self.web_session.interactor.click(self.FOUNDATIONS_BTN)
             else:
                 self.logger.error("Fluency Builder navigation element not found")
                 raise RuntimeError("Fluency Builder navigation element not found")

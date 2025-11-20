@@ -9,7 +9,7 @@ from rosseta_stone_script_a.shared.mixins import LoggingMixin
 from .dependency_factory import DependencyFactory
 
 
-class CLI(LoggingMixin):
+class RosettaCLI(LoggingMixin):
     """CLI interface with centralized logging."""
 
     async def enter_rosetta(
@@ -47,16 +47,10 @@ class CLI(LoggingMixin):
                 )
 
                 # Create and execute hierarchical learning session orchestrator
-                learning_session = factory.create_full_learning_session()
+                open_fundations = factory.create_open_fundations()
 
-                await learning_session.execute(
+                await open_fundations.execute(
                     credentials=user_credentials,
-                    course_pattern=course_pattern,
-                    lesson_pattern=lesson_pattern,
-                    activity_pattern=activity_pattern,
-                    action=action,
-                    max_activities=max_activities,
-                    auto_exit=True,
                 )
 
                 self.logger.info("Hierarchical learning session finished successfully")
@@ -78,20 +72,15 @@ class CLI(LoggingMixin):
             password=rosseta_settings.rosetta_password,
         )
 
-        # Run hierarchical learning session by default
         asyncio.run(
             self.enter_rosetta(
                 rosseta_login_url=rosseta_settings.rosetta_login_url,
                 user_credentials=user_credentials,
-                course_pattern="Manage Your Career (B1)",  # Course name
-                lesson_pattern=1,  # First lesson
-                activity_pattern=1,  # First activity
-                action="resume",  # Try to resume first
             )
         )
 
 
 def main_cli():
     """Legacy function - use CLI().main_cli() instead."""
-    cli = CLI()
+    cli = RosettaCLI()
     cli.main_cli()

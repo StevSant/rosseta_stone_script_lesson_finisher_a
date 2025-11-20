@@ -22,9 +22,6 @@ class CompiledPatterns:
     SIGNIN = AuthPatterns.SIGNIN
     LOGIN_PAGE = AuthPatterns.LOGIN_PAGE
 
-    # Cookie patterns - use ModalPatterns instead
-
-    CLOSE_BUTTON = NavigationPatterns.CLOSE
 
 
 @dataclass
@@ -87,7 +84,6 @@ class Timeouts:
     VERY_LONG_TIMEOUT = 60000
     SHORT_TIMEOUT = 3000
     VERY_SHORT_TIMEOUT = 1500
-    COOKIE_TIMEOUT = 2000
 
 
 @dataclass
