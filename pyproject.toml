@@ -1,0 +1,17 @@
+[project]
+name = "rosseta-stone-script-a"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "playwright>=1.56.0",
+]
+
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+app = "rosseta_stone_script_a.__main__:main"

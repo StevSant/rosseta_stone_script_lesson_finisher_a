@@ -1,0 +1,97 @@
+import asyncio
+from typing import Optional, Union
+
+from rosseta_stone_script_a.domain.entities.credentials import Credentials
+from rosseta_stone_script_a.infrastructure.adapters.web import PlaywrightBrowserProvider
+from rosseta_stone_script_a.infrastructure.core import settings
+from rosseta_stone_script_a.shared.mixins import LoggingMixin
+
+from .dependency_factory import DependencyFactory
+
+
+class CLI(LoggingMixin):
+    """CLI interface with centralized logging."""
+
+    async def enter_rosetta(
+        self,
+        *,
+        rosseta_login_url: str,
+        user_credentials: Credentials,
+    ):
+        """
+        Run a hierarchical learning session following Course → Lesson → Activity flow.
+        This follows the proper Rosetta Stone hierarchy.
+        """
+        browser_settings = settings.browser_settings
+
+        provider = PlaywrightBrowserProvider(
+            headless=browser_settings.headless,
+            slow_mo=browser_settings.slow_mo,
+            user_agent=browser_settings.user_agent,
+            locale=browser_settings.locale,
+            viewport={
+                "width": browser_settings.viewport_width,
+                "height": browser_settings.viewport_height,
+            },
+        )
+
+        await provider.start()
+        self.logger.info("BrowserProvider started")
+
+        try:
+            web = provider.new_web_session()
+            async with web.session() as web_session:
+                # Create dependency factory
+                factory = DependencyFactory(
+                    web_session=web_session, rosseta_login_url=rosseta_login_url
+                )
+
+                # Create and execute hierarchical learning session orchestrator
+                learning_session = factory.create_full_learning_session()
+
+                await learning_session.execute(
+                    credentials=user_credentials,
+                    course_pattern=course_pattern,
+                    lesson_pattern=lesson_pattern,
+                    activity_pattern=activity_pattern,
+                    action=action,
+                    max_activities=max_activities,
+                    auto_exit=True,
+                )
+
+                self.logger.info("Hierarchical learning session finished successfully")
+
+        finally:
+            await provider.stop()
+            self.logger.info("BrowserProvider stopped")
+
+    def main_cli(self):
+        """
+        Entry point invocado desde main.py o directamente si quieres.
+        Puede parsear argumentos, aquí lo dejamos simple y usa settings.
+
+        Por defecto ejecuta una sesión completa de aprendizaje.
+        """
+        rosseta_settings = settings.rosseta_settings
+        user_credentials = Credentials(
+            email=rosseta_settings.rosetta_email,
+            password=rosseta_settings.rosetta_password,
+        )
+
+        # Run hierarchical learning session by default
+        asyncio.run(
+            self.enter_rosetta(
+                rosseta_login_url=rosseta_settings.rosetta_login_url,
+                user_credentials=user_credentials,
+                course_pattern="Manage Your Career (B1)",  # Course name
+                lesson_pattern=1,  # First lesson
+                activity_pattern=1,  # First activity
+                action="resume",  # Try to resume first
+            )
+        )
+
+
+def main_cli():
+    """Legacy function - use CLI().main_cli() instead."""
+    cli = CLI()
+    cli.main_cli()

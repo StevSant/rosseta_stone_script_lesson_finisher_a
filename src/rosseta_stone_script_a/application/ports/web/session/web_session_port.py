@@ -1,0 +1,23 @@
+from abc import ABC, abstractmethod
+
+from ..control.interactor_port import InteractorPort
+from ..control.navigator_port import NavigatorPort
+from ..control.screenshotter_port import ScreenShootterPort
+from ..diagnostics.cookie_consent_port import CookieConsentPort
+from ..diagnostics.debug_dumper_port import DebugDumperPort
+
+
+class IWebSession(ABC):
+    """Capacidad completa de automatización web"""
+
+    navigator: "NavigatorPort"
+    interactor: "InteractorPort"
+
+    cookie_consent: "CookieConsentPort"
+    screenshotter: "ScreenShootterPort"
+    debug_dumpper: "DebugDumperPort"
+
+    @abstractmethod
+    async def session(self) -> None: ...
+    @abstractmethod
+    async def close(self) -> None: ...
