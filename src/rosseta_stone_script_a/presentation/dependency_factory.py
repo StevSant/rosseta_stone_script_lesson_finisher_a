@@ -1,3 +1,6 @@
+from rosseta_stone_script_a.application.orchestrators.complete_foundations_orchestrator import (
+    CompleteFoundationsOrchestrator,
+)
 from rosseta_stone_script_a.application.orchestrators.open_fundations import (
     OpenFundations,
 )
@@ -75,6 +78,23 @@ class DependencyFactory:
             dashboard_page=dashboard_page,
             session_capturer=session_capturer,
         )
+        # Create orchestrator
+        return OpenFundations(
+            login_use_case=login_use_case,
+            navigate_use_case=navigate_use_case,
+        )
+
+    def create_complete_foundations_orchestrator(
+        self,
+    ) -> CompleteFoundationsOrchestrator:
+        """Create CompleteFoundations orchestrator with dependencies."""
+        # Access the underlying Playwright page to get the request context
+        page = getattr(self.web_session, "_page", None)
+        if not page:
+            raise RuntimeError("Web session not initialized correctly")
+
+        foundations_api_adapter = PlaywrightFoundationsApiAdapter(page.request)
+
         complete_foundations_use_case = CompleteFoundationsUseCase(
             api_port=foundations_api_adapter,
             units_to_complete=self.units_to_complete,
@@ -83,9 +103,6 @@ class DependencyFactory:
             inter_path_delay_ms=self.inter_path_delay_ms,
         )
 
-        # Create orchestrator
-        return OpenFundations(
-            login_use_case=login_use_case,
-            navigate_use_case=navigate_use_case,
-            complete_foundations_use_case=complete_foundations_use_case,
+        return CompleteFoundationsOrchestrator(
+            complete_foundations_use_case=complete_foundations_use_case
         )

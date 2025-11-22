@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
-from rosseta_stone_script_a.domain.entities.foundations import CourseMenu
+from rosseta_stone_script_a.domain.entities.course_menu import CourseMenu
 
 
 class FoundationsApiPort(ABC):

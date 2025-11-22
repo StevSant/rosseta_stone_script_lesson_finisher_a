@@ -57,10 +57,15 @@ class RosettaCLI(LoggingMixin):
 
                 # Create and execute hierarchical learning session orchestrator
                 open_fundations = factory.create_open_fundations()
+                complete_foundations = (
+                    factory.create_complete_foundations_orchestrator()
+                )
 
-                await open_fundations.execute(
+                captured_data = await open_fundations.execute(
                     credentials=user_credentials,
                 )
+
+                await complete_foundations.execute(captured_data)
 
                 self.logger.info("Hierarchical learning session finished successfully")
 

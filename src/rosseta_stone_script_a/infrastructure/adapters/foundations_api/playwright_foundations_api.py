@@ -4,12 +4,10 @@ from typing import Any, Dict
 from playwright.async_api import APIRequestContext
 
 from rosseta_stone_script_a.application.ports.foundations_api import FoundationsApiPort
-from rosseta_stone_script_a.domain.entities.foundations import (
-    CourseMenu,
-    Lesson,
-    Path,
-    Unit,
-)
+from rosseta_stone_script_a.domain.entities.course_menu import CourseMenu
+from rosseta_stone_script_a.domain.entities.lesson import Lesson
+from rosseta_stone_script_a.domain.entities.path import Path
+from rosseta_stone_script_a.domain.entities.unit import Unit
 from rosseta_stone_script_a.shared.mixins.loggin_mixin import LoggingMixin
 
 

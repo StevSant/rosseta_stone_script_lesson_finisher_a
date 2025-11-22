@@ -5,7 +5,7 @@ import time
 
 from rosseta_stone_script_a.application.ports.foundations_api import FoundationsApiPort
 from rosseta_stone_script_a.application.ports.use_case import UseCasePort
-from rosseta_stone_script_a.domain.entities.foundations import Path
+from rosseta_stone_script_a.domain.entities.path import Path
 
 
 class CompleteFoundationsUseCase(UseCasePort):
