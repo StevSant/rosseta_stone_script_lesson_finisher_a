@@ -33,10 +33,16 @@ class DependencyFactory:
         web_session: IWebSession,
         rosseta_login_url: str,
         units_to_complete: list[int] = None,
+        target_score_percent: int = 100,
+        max_start_time_offset_ms: int = 432000000,
+        inter_path_delay_ms: int = 500,
     ):
         self.web_session = web_session
         self.rosseta_login_url = rosseta_login_url
         self.units_to_complete = units_to_complete or []
+        self.target_score_percent = target_score_percent
+        self.max_start_time_offset_ms = max_start_time_offset_ms
+        self.inter_path_delay_ms = inter_path_delay_ms
 
     def create_open_fundations(self) -> OpenFundations:
         """Create OpenFluencyBuilder orchestrator with dependencies."""
@@ -57,7 +63,7 @@ class DependencyFactory:
         page = getattr(self.web_session, "_page", None)
         if not page:
             raise RuntimeError("Web session not initialized correctly")
-        
+
         foundations_api_adapter = PlaywrightFoundationsApiAdapter(page.request)
 
         # Create use cases
@@ -72,11 +78,14 @@ class DependencyFactory:
         complete_foundations_use_case = CompleteFoundationsUseCase(
             api_port=foundations_api_adapter,
             units_to_complete=self.units_to_complete,
+            target_score_percent=self.target_score_percent,
+            max_start_time_offset_ms=self.max_start_time_offset_ms,
+            inter_path_delay_ms=self.inter_path_delay_ms,
         )
 
         # Create orchestrator
         return OpenFundations(
-            login_use_case=login_use_case, 
+            login_use_case=login_use_case,
             navigate_use_case=navigate_use_case,
-            complete_foundations_use_case=complete_foundations_use_case
+            complete_foundations_use_case=complete_foundations_use_case,
         )

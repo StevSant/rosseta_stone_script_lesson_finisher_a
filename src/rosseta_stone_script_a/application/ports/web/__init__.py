@@ -10,7 +10,7 @@ from .control import (
 )
 
 # Diagnostics and debugging
-from .diagnostics import  DebugDumperPort
+from .diagnostics import DebugDumperPort
 
 # Page-specific interfaces
 from .page import AuthPort

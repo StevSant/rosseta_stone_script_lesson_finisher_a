@@ -11,6 +11,11 @@ class RosettaSettings(BaseSettings):
     rosetta_password: str | None = None
     rosetta_units_to_complete: List[int] = []
 
+    # Progress and timing settings
+    rosetta_target_score_percent: int = 100
+    rosetta_max_start_time_offset_ms: int = 432000000  # ~5 days
+    rosetta_inter_path_delay_ms: int = 500
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @field_validator("rosetta_units_to_complete", mode="before")

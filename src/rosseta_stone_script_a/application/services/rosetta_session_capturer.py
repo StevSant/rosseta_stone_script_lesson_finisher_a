@@ -27,9 +27,10 @@ class RosettaSessionCapturer(LoggingMixin):
             if "authorization" in headers:
                 auth_value = headers["authorization"]
                 # Ensure we capture the long JWT-like token (starts with eyJ), not the UUID Bearer token
-                if auth_value.startswith("eyJ") and not self.captured_data[
-                    "authorization"
-                ]:
+                if (
+                    auth_value.startswith("eyJ")
+                    and not self.captured_data["authorization"]
+                ):
                     self.captured_data["authorization"] = auth_value
 
             # 2. Capture data from /recommended_course

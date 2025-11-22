@@ -18,6 +18,9 @@ class RosettaCLI(LoggingMixin):
         rosseta_login_url: str,
         user_credentials: Credentials,
         units_to_complete: list[int] = None,
+        target_score_percent: int = 100,
+        max_start_time_offset_ms: int = 432000000,
+        inter_path_delay_ms: int = 500,
     ):
         """
         Run a hierarchical learning session following Course → Lesson → Activity flow.
@@ -47,6 +50,9 @@ class RosettaCLI(LoggingMixin):
                     web_session=web_session,
                     rosseta_login_url=rosseta_login_url,
                     units_to_complete=units_to_complete,
+                    target_score_percent=target_score_percent,
+                    max_start_time_offset_ms=max_start_time_offset_ms,
+                    inter_path_delay_ms=inter_path_delay_ms,
                 )
 
                 # Create and execute hierarchical learning session orchestrator
@@ -80,6 +86,9 @@ class RosettaCLI(LoggingMixin):
                 rosseta_login_url=rosseta_settings.rosetta_login_url,
                 user_credentials=user_credentials,
                 units_to_complete=rosseta_settings.rosetta_units_to_complete,
+                target_score_percent=rosseta_settings.rosetta_target_score_percent,
+                max_start_time_offset_ms=rosseta_settings.rosetta_max_start_time_offset_ms,
+                inter_path_delay_ms=rosseta_settings.rosetta_inter_path_delay_ms,
             )
         )
 

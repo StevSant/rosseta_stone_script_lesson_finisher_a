@@ -13,9 +13,19 @@ class CompleteFoundationsUseCase(UseCasePort):
     Use case for automatically completing Rosetta Stone Foundations lessons.
     """
 
-    def __init__(self, api_port: FoundationsApiPort, units_to_complete: list[int] = None):
+    def __init__(
+        self,
+        api_port: FoundationsApiPort,
+        units_to_complete: list[int] = None,
+        target_score_percent: int = 100,
+        max_start_time_offset_ms: int = 432000000,
+        inter_path_delay_ms: int = 500,
+    ):
         self.api_port = api_port
         self.units_to_complete = units_to_complete or []
+        self.target_score_percent = target_score_percent
+        self.max_start_time_offset_ms = max_start_time_offset_ms
+        self.inter_path_delay_ms = inter_path_delay_ms
 
     async def execute(
         self,
@@ -27,7 +37,7 @@ class CompleteFoundationsUseCase(UseCasePort):
     ) -> None:
         """
         Execute the completion process.
-        
+
         Args:
             authorization: GraphQL authorization token (JWT)
             language_code: Language code (e.g., ENG)
@@ -43,7 +53,9 @@ class CompleteFoundationsUseCase(UseCasePort):
 
         # 1. Fetch Course Menu
         try:
-            course_menu = await self.api_port.get_course_menu(authorization, language_code)
+            course_menu = await self.api_port.get_course_menu(
+                authorization, language_code
+            )
         except Exception as e:
             self.logger.error(f"Failed to get course menu: {e}")
             return
@@ -53,13 +65,22 @@ class CompleteFoundationsUseCase(UseCasePort):
         # 2. Iterate through units
         for unit in course_menu.units:
             # Filter units if configured
-            if self.units_to_complete and unit.unit_number not in self.units_to_complete:
-                self.logger.debug(f"Skipping Unit {unit.unit_number} (not in target list)")
+            if (
+                self.units_to_complete
+                and unit.unit_number not in self.units_to_complete
+            ):
+                self.logger.debug(
+                    f"Skipping Unit {unit.unit_number} (not in target list)"
+                )
                 continue
 
-            self.logger.info(f"Processing Unit {unit.unit_number}")            # Start Time should reset for each unit (logic from JS)
+            self.logger.info(
+                f"Processing Unit {unit.unit_number}"
+            )  # Start Time should reset for each unit (logic from JS)
             # JS: const startTime = Date.now() - getRndInteger(0, 432000000);
-            start_time = int(time.time() * 1000) - random.randint(0, 432000000)
+            start_time = int(time.time() * 1000) - random.randint(
+                0, self.max_start_time_offset_ms
+            )
             time_so_far = 0
 
             for lesson in unit.lessons:
@@ -76,7 +97,7 @@ class CompleteFoundationsUseCase(UseCasePort):
                         school_id=school_id,
                         user_id=user_id,
                         start_time=start_time,
-                        time_so_far=time_so_far
+                        time_so_far=time_so_far,
                     )
 
                     # Update time_so_far for next path
@@ -88,14 +109,16 @@ class CompleteFoundationsUseCase(UseCasePort):
                     time_estimate = path.time_estimate
                     time_in_minutes = time_estimate + random.randint(
                         -1 * math.floor(time_estimate / 3),
-                        math.floor(time_estimate / 3)
+                        math.floor(time_estimate / 3),
                     )
-                    time_in_milliseconds = time_in_minutes * 60000 + random.randint(0, 6000)
+                    time_in_milliseconds = time_in_minutes * 60000 + random.randint(
+                        0, 6000
+                    )
 
                     time_so_far += time_in_milliseconds + random.randint(0, 60000)
 
                     # Small delay to avoid flooding the server
-                    await asyncio.sleep(0.5)
+                    await asyncio.sleep(self.inter_path_delay_ms / 1000.0)
 
         self.logger.info("Foundations completion process finished.")
 
@@ -106,24 +129,25 @@ class CompleteFoundationsUseCase(UseCasePort):
         school_id: str,
         user_id: str,
         start_time: int,
-        time_so_far: int
+        time_so_far: int,
     ) -> None:
         # Calculate time and score
         time_estimate = path.time_estimate
         time_in_minutes = time_estimate + random.randint(
-            -1 * math.floor(time_estimate / 3),
-            math.floor(time_estimate / 3)
+            -1 * math.floor(time_estimate / 3), math.floor(time_estimate / 3)
         )
         time_in_milliseconds = time_in_minutes * 60000 + random.randint(0, 6000)
 
         # JS: const percentCorrect = 100;
-        percent_correct = 100
+        percent_correct = self.target_score_percent
         questions_correct = math.ceil(path.num_challenges * (percent_correct / 100))
 
         # JS: let timeCompleted = startTime + timeSoFar;
         time_completed = start_time + time_so_far + time_in_milliseconds
 
-        self.logger.info(f"    Completing path: {path.type} (Course: {path.course}, Unit: {path.unit_index}, Lesson: {path.lesson_index})")
+        self.logger.info(
+            f"    Completing path: {path.type} (Course: {path.course}, Unit: {path.unit_index}, Lesson: {path.lesson_index})"
+        )
 
         await self.api_port.update_path_score(
             session_token=session_token,
@@ -137,5 +161,5 @@ class CompleteFoundationsUseCase(UseCasePort):
             score_incorrect=path.num_challenges - questions_correct,
             duration_ms=time_in_milliseconds,
             timestamp_ms=time_completed,
-            num_challenges=path.num_challenges
+            num_challenges=path.num_challenges,
         )

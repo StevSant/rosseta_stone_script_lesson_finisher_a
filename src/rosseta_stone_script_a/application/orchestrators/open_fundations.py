@@ -48,23 +48,25 @@ class OpenFundations(OrchestratorPort):
 
         # Step 2: Navigate to Fluency Builder and capture data
         await self.navigate_use_case.execute()
-        
+
         # Retrieve captured data from the navigate use case's capturer
-        # Note: We need to access the capturer from the use case. 
-        # Ideally, the use case should return the data, but for now we access it directly 
+        # Note: We need to access the capturer from the use case.
+        # Ideally, the use case should return the data, but for now we access it directly
         # or we can modify the use case to return it.
         # Let's assume we can access it via the use case instance for now.
         captured_data = self.navigate_use_case.session_capturer.get_captured_data()
-        
+
         if all(captured_data.values()):
-            self.logger.info("Session data captured successfully. Starting completion...")
+            self.logger.info(
+                "Session data captured successfully. Starting completion..."
+            )
             # Step 3: Complete Foundations
             await self.complete_foundations_use_case.execute(
                 authorization=captured_data["authorization"],
                 language_code=captured_data["lang_code"],
                 session_token=captured_data["session_token"],
                 school_id=captured_data["school_id"],
-                user_id=captured_data["user_id"]
+                user_id=captured_data["user_id"],
             )
         else:
             self.logger.warning("Missing captured session data. Skipping completion.")
