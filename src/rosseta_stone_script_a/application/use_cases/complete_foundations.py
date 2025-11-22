@@ -63,6 +63,13 @@ class CompleteFoundationsUseCase(UseCasePort):
         self.logger.info(f"Fetched course menu. Total units: {len(course_menu.units)}")
 
         # 2. Iterate through units
+        tasks = []
+        sem = asyncio.Semaphore(50)  # Allow 50 concurrent requests
+
+        async def sem_task(task):
+            async with sem:
+                await task
+
         for unit in course_menu.units:
             # Filter units if configured
             if (
@@ -91,7 +98,7 @@ class CompleteFoundationsUseCase(UseCasePort):
                         self.logger.debug(f"    Skipping completed path: {path.type}")
                         continue
 
-                    await self._complete_path(
+                    task = self._complete_path(
                         path=path,
                         session_token=session_token,
                         school_id=school_id,
@@ -99,6 +106,7 @@ class CompleteFoundationsUseCase(UseCasePort):
                         start_time=start_time,
                         time_so_far=time_so_far,
                     )
+                    tasks.append(sem_task(task))
 
                     # Update time_so_far for next path
                     # Logic from JS:
@@ -117,8 +125,11 @@ class CompleteFoundationsUseCase(UseCasePort):
 
                     time_so_far += time_in_milliseconds + random.randint(0, 60000)
 
-                    # Small delay to avoid flooding the server
-                    await asyncio.sleep(self.inter_path_delay_ms / 1000.0)
+        if tasks:
+            self.logger.info(f"Executing {len(tasks)} tasks concurrently...")
+            await asyncio.gather(*tasks)
+        else:
+            self.logger.info("No tasks to execute.")
 
         self.logger.info("Foundations completion process finished.")
 
@@ -154,8 +165,8 @@ class CompleteFoundationsUseCase(UseCasePort):
             school_id=school_id,
             user_id=user_id,
             course=path.course,
-            unit_index=path.unit_index,
-            lesson_index=path.lesson_index,
+            unit_index=path.unit_index % 4,
+            lesson_index=path.curriculum_lesson_index,
             path_type=path.type,
             score_correct=questions_correct,
             score_incorrect=path.num_challenges - questions_correct,

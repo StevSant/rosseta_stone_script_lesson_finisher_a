@@ -30,6 +30,10 @@ class PlaywrightFoundationsApiAdapter(FoundationsApiPort, LoggingMixin):
             "content-type": "application/json",
             "authorization": authorization,
             "x-request-id": "66a4813c-8077-4509-9875-6c10608b9933",
+            "Referer": "https://totale.rosettastone.com/",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-site",
         }
 
         query = """
@@ -167,6 +171,10 @@ class PlaywrightFoundationsApiAdapter(FoundationsApiPort, LoggingMixin):
             "x-rosettastone-app-version": "ZoomCourse/11.11.2",
             "x-rosettastone-protocol-version": "8",
             "x-rosettastone-session-token": session_token,
+            "Referer": "https://totale.rosettastone.com/",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-site",
         }
 
         body = f"""<path_score>

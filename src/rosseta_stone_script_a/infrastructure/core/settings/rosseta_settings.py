@@ -12,7 +12,7 @@ class RosettaSettings(BaseSettings):
     rosetta_units_to_complete: List[int] = []
 
     # Progress and timing settings
-    rosetta_target_score_percent: int = 100
+    rosetta_target_score_percent: int
     rosetta_max_start_time_offset_ms: int = 432000000  # ~5 days
     rosetta_inter_path_delay_ms: int = 500
 
