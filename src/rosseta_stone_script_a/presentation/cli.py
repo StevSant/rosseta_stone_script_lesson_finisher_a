@@ -17,6 +17,7 @@ class RosettaCLI(LoggingMixin):
         *,
         rosseta_login_url: str,
         user_credentials: Credentials,
+        units_to_complete: list[int] = None,
     ):
         """
         Run a hierarchical learning session following Course → Lesson → Activity flow.
@@ -43,7 +44,9 @@ class RosettaCLI(LoggingMixin):
             async with web.session() as web_session:
                 # Create dependency factory
                 factory = DependencyFactory(
-                    web_session=web_session, rosseta_login_url=rosseta_login_url
+                    web_session=web_session,
+                    rosseta_login_url=rosseta_login_url,
+                    units_to_complete=units_to_complete,
                 )
 
                 # Create and execute hierarchical learning session orchestrator
@@ -76,6 +79,7 @@ class RosettaCLI(LoggingMixin):
             self.enter_rosetta(
                 rosseta_login_url=rosseta_settings.rosetta_login_url,
                 user_credentials=user_credentials,
+                units_to_complete=rosseta_settings.rosetta_units_to_complete,
             )
         )
 

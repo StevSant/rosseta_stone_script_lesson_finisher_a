@@ -8,12 +8,18 @@ from rosseta_stone_script_a.application.ports.web import (
     InteractorPort,
     IWebSession,
     NavigatorPort,
+    NetworkMonitorPort,
     ScreenShootterPort,
 )
 from rosseta_stone_script_a.shared.mixins.loggin_mixin import LoggingMixin
 
 from ..common import Viewport
-from ..control import InteractorAdapter, NavigatorAdapter, ScreenshotterAdapter
+from ..control import (
+    InteractorAdapter,
+    NavigatorAdapter,
+    PlaywrightNetworkMonitor,
+    ScreenshotterAdapter,
+)
 from ..diagnostics.playwright_debug_dumper import PlaywrightFileDebugDumperAdapter
 
 
@@ -37,6 +43,7 @@ class PlaywrightWebSession(IWebSession, LoggingMixin):
 
         self.navigator: NavigatorPort | None = None
         self.interactor: InteractorPort | None = None
+        self.network_monitor: NetworkMonitorPort | None = None
         self.screenshotter: ScreenShootterPort | None = None
         self.screenshotter: ScreenShootterPort | None = None
 
@@ -91,5 +98,6 @@ class PlaywrightWebSession(IWebSession, LoggingMixin):
         self.logger.info("Performing initial setup...")
         self.navigator = NavigatorAdapter(self._page)
         self.interactor = InteractorAdapter(self._page)
+        self.network_monitor = PlaywrightNetworkMonitor(self._page)
         self.screenshotter = ScreenshotterAdapter(self._page)
         self.debug_dumpper = PlaywrightFileDebugDumperAdapter(self.screenshotter)

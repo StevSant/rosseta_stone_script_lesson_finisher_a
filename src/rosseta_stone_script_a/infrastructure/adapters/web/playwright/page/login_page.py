@@ -77,7 +77,9 @@ class LoginPage(AuthPort):
 
         self.logger.info("Login process completed successfully")
 
-    async def _handle_institutional_account_selection(self, creds: "Credentials") -> bool:
+    async def _handle_institutional_account_selection(
+        self, creds: "Credentials"
+    ) -> bool:
         """Handle institutional account selection if multiple accounts are associated."""
         try:
             # Wait a moment for the page to load after initial login attempt
@@ -95,7 +97,9 @@ class LoginPage(AuthPort):
             for selector in institutional_selectors:
                 try:
                     if await self.web_session.interactor.exists(selector, timeout=3000):
-                        self.logger.info("Found institutional account selector (uleam)...")
+                        self.logger.info(
+                            "Found institutional account selector (uleam)..."
+                        )
                         await self.web_session.interactor.click_first(selector)
                         account_found = True
                         break
@@ -105,7 +109,9 @@ class LoginPage(AuthPort):
             if not account_found:
                 try:
                     uleam_selector = Selector.by_text("uleam")
-                    if await self.web_session.interactor.exists(uleam_selector, timeout=3000):
+                    if await self.web_session.interactor.exists(
+                        uleam_selector, timeout=3000
+                    ):
                         self.logger.info(
                             "Detected institutional account page, looking for clickable elements..."
                         )

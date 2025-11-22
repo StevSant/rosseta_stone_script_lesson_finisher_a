@@ -3,6 +3,7 @@
 from .control import (
     InteractorPort,
     NavigatorPort,
+    NetworkMonitorPort,
     ScreenShootterPort,
     Selector,
     SelectorKind,
@@ -22,6 +23,7 @@ __all__ = [
     # Control interfaces
     "InteractorPort",
     "NavigatorPort",
+    "NetworkMonitorPort",
     "ScreenShootterPort",
     "Selector",
     "SelectorKind",
