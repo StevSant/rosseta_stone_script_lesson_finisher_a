@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from playwright.async_api import Browser, BrowserContext, Page
+from playwright._impl._errors import TargetClosedError
 
 from rosseta_stone_script_a.application.ports.web import (
     DebugDumperPort,
@@ -62,12 +63,26 @@ class PlaywrightWebSession(IWebSession, LoggingMixin):
             await self.close()
 
     async def close(self) -> None:
-        """Close web session"""
+        """Close web session safely, handling already-closed resources."""
         self.logger.info("Closing web session...")
+
+        # Close page first, ignoring if already closed
         if self._page:
-            await self._page.close()
+            try:
+                await self._page.close()
+            except TargetClosedError:
+                self.logger.debug("Page was already closed")
+            except Exception as e:
+                self.logger.warning(f"Error closing page: {e}")
+
+        # Close context, ignoring if already closed
         if self._context:
-            await self._context.close()
+            try:
+                await self._context.close()
+            except TargetClosedError:
+                self.logger.debug("Context was already closed")
+            except Exception as e:
+                self.logger.warning(f"Error closing context: {e}")
 
     async def _create_context(self) -> None:
         """Create browser context with realistic settings."""
