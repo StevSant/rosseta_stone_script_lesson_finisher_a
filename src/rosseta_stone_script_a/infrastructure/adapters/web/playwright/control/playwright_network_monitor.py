@@ -1,4 +1,4 @@
-from typing import Any, Callable, Coroutine
+from typing import Any, Callable
 
 from playwright.async_api import Page
 
@@ -14,11 +14,11 @@ class PlaywrightNetworkMonitor(NetworkMonitorPort):
         self._page = page
 
     def add_request_listener(
-        self, listener: Callable[[Any], Coroutine[Any, Any, None]]
+        self, listener: Callable[[Any], None]
     ) -> None:
         self._page.on("request", listener)
 
     def remove_request_listener(
-        self, listener: Callable[[Any], Coroutine[Any, Any, None]]
+        self, listener: Callable[[Any], None]
     ) -> None:
         self._page.remove_listener("request", listener)

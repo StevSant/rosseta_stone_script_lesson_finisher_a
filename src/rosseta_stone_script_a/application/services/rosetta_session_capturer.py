@@ -17,11 +17,18 @@ class RosettaSessionCapturer(LoggingMixin):
             "session_token": None,
         }
 
-    async def handle_request(self, request: Any) -> None:
-        """Callback to handle network requests and extract data."""
+    def handle_request(self, request: Any) -> None:
+        """Callback to handle network requests and extract data.
+
+        Note: This must be a synchronous function because Playwright's
+        page.on("request", handler) does not properly await async handlers.
+        """
         try:
             url = request.url
             headers = request.headers
+
+            # Debug: Log requests (use debug level for less noise)
+            self.logger.debug(f"[RequestCapture] URL: {url}")
 
             # 1. Capture header "authorization" from GraphQL
             if "authorization" in headers:
@@ -31,10 +38,14 @@ class RosettaSessionCapturer(LoggingMixin):
                     auth_value.startswith("eyJ")
                     and not self.captured_data["authorization"]
                 ):
+                    self.logger.info("[RequestCapture] Found authorization token")
                     self.captured_data["authorization"] = auth_value
 
             # 2. Capture data from /recommended_course
             if "/recommended_course" in url:
+                self.logger.info(
+                    f"[RequestCapture] Found /recommended_course URL: {url}"
+                )
                 # Extract school_id and user_id
                 match = re.search(
                     r"/ee/ce/([^/]+)/users/([^/]+)/recommended_course", url
@@ -42,18 +53,25 @@ class RosettaSessionCapturer(LoggingMixin):
                 if match:
                     self.captured_data["school_id"] = match.group(1)
                     self.captured_data["user_id"] = match.group(2)
+                    self.logger.info(
+                        f"[RequestCapture] Extracted school_id={match.group(1)}, user_id={match.group(2)}"
+                    )
 
                 # Extract lang_code
                 parsed = urlparse(url)
                 qs = parse_qs(parsed.query)
                 if "product_identifier" in qs:
                     self.captured_data["lang_code"] = qs["product_identifier"][0]
+                    self.logger.info(
+                        f"[RequestCapture] Extracted lang_code={qs['product_identifier'][0]}"
+                    )
 
                 # Extract session token
                 if "x-rosettastone-session-token" in headers:
                     self.captured_data["session_token"] = headers[
                         "x-rosettastone-session-token"
                     ]
+                    self.logger.info("[RequestCapture] Found session token")
         except Exception as e:
             self.logger.error(f"Error in request interceptor: {e}")
 
