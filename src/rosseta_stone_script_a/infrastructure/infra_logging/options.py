@@ -2,11 +2,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Literal, Sequence
 
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 Rotation = Literal["size", "time", "none"]
+
+
+def _get_dated_filename(base_dir: Path, prefix: str, extension: str = ".log") -> Path:
+    """Generate a filename with current date for organized logging."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    return base_dir / f"{prefix}_{today}{extension}"
 
 
 @dataclass(frozen=True)

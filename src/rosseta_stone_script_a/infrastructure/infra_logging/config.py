@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from .filters import ExcludePathFilter
-from .formatters import JsonFormatter, RelPathFormatter
+from .formatters import ErrorFileFormatter, FileFormatter, JsonFormatter, RelPathFormatter
 from .options import LoggingOptions
 from .utils import detect_project_root
 
@@ -30,6 +30,14 @@ def _formatter_entry(use_json: bool, project_root: Path) -> Dict[str, Any]:
             "format": "{levelname} - {relpath}:{lineno} - {message}",
             "style": "{",
             "datefmt": "%Y-%m-%d %H:%M:%S",
+            "project_root": project_root,
+        },
+        "file": {
+            "()": FileFormatter,
+            "project_root": project_root,
+        },
+        "error_file": {
+            "()": ErrorFileFormatter,
             "project_root": project_root,
         },
     }
@@ -73,8 +81,16 @@ def build_config(options: LoggingOptions) -> Dict[str, Any]:
 
     # Formatters
     fmts = _formatter_entry(options.use_json_formatter, project_root)
-    default_formatter = "json" if options.use_json_formatter else "detailed"
-    console_fmt = "json" if options.use_json_formatter else "console"
+    
+    # Select appropriate formatters based on mode
+    if options.use_json_formatter:
+        file_formatter = "json"
+        error_formatter = "json"
+        console_fmt = "json"
+    else:
+        file_formatter = "file"
+        error_formatter = "error_file"
+        console_fmt = "console"
 
     # Handlers
     handlers: Dict[str, Any] = {
@@ -87,10 +103,10 @@ def build_config(options: LoggingOptions) -> Dict[str, Any]:
         }
     }
     handlers.update(
-        _make_file_handler_dict("file_info", options.file_info, default_formatter)
+        _make_file_handler_dict("file_info", options.file_info, file_formatter)
     )
     handlers.update(
-        _make_file_handler_dict("file_error", options.file_error, default_formatter)
+        _make_file_handler_dict("file_error", options.file_error, error_formatter)
     )
 
     # Si no hay file handlers activos, evitamos referenciarlos en loggers/root

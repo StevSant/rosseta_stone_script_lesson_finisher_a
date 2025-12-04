@@ -25,6 +25,58 @@ class RelPathFormatter(logging.Formatter):
         return super().format(record)
 
 
+class FileFormatter(RelPathFormatter):
+    """Formatter detallado para archivos de log.
+    
+    Incluye timestamp completo, nivel, ubicación y mensaje.
+    Ideal para debugging y auditoría.
+    """
+    
+    def __init__(self, project_root, **kwargs):
+        fmt = "[{asctime}] [{levelname:^8}] {relpath}:{lineno} | {funcName}() | {message}"
+        super().__init__(
+            fmt=fmt,
+            style="{",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            project_root=project_root,
+            **kwargs
+        )
+
+
+class ErrorFileFormatter(RelPathFormatter):
+    """Formatter especial para logs de error con más contexto.
+    
+    Incluye información adicional útil para debugging de errores.
+    """
+    
+    def __init__(self, project_root, **kwargs):
+        fmt = (
+            "{'='*60}\n"
+            "[{asctime}] [{levelname}]\n"
+            "Location: {relpath}:{lineno} in {funcName}()\n"
+            "Logger: {name}\n"
+            "Message: {message}\n"
+        )
+        super().__init__(
+            fmt="[{asctime}] [{levelname:^8}] {relpath}:{lineno} | {funcName}() | {message}",
+            style="{",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            project_root=project_root,
+            **kwargs
+        )
+
+    def format(self, record: logging.LogRecord) -> str:
+        # Add separator for errors to make them easier to find
+        formatted = super().format(record)
+        if record.levelno >= logging.ERROR:
+            separator = "=" * 80
+            formatted = f"\n{separator}\n{formatted}"
+            if record.exc_info:
+                formatted += f"\n{self.formatException(record.exc_info)}"
+            formatted += f"\n{separator}\n"
+        return formatted
+
+
 class JsonFormatter(logging.Formatter):
     """JSON formatter minimalista: ideal para Prod / parsers (ELK/Datadog)."""
 
