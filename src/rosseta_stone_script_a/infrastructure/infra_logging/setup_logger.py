@@ -23,7 +23,7 @@ def _env_level(
 
 def _setup_log_directories(logs_dir: "Path") -> dict:
     """Create organized log directory structure.
-    
+
     Structure:
         logs/
         ├── app/           # Application logs (INFO+)
@@ -34,18 +34,18 @@ def _setup_log_directories(logs_dir: "Path") -> dict:
             └── debug_2024-01-15.log
     """
     from pathlib import Path
-    
+
     # Create subdirectories
     app_dir = logs_dir / "app"
     error_dir = logs_dir / "error"
     debug_dir = logs_dir / "debug"
-    
+
     for directory in [logs_dir, app_dir, error_dir, debug_dir]:
         directory.mkdir(parents=True, exist_ok=True)
-    
+
     # Generate dated filenames
     today = datetime.now().strftime("%Y-%m-%d")
-    
+
     return {
         "app": app_dir / f"app_{today}.log",
         "error": error_dir / f"error_{today}.log",

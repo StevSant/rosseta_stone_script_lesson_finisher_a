@@ -4,7 +4,12 @@ from pathlib import Path
 from typing import Any, Dict
 
 from .filters import ExcludePathFilter
-from .formatters import ErrorFileFormatter, FileFormatter, JsonFormatter, RelPathFormatter
+from .formatters import (
+    ErrorFileFormatter,
+    FileFormatter,
+    JsonFormatter,
+    RelPathFormatter,
+)
 from .options import LoggingOptions
 from .utils import detect_project_root
 
@@ -81,7 +86,7 @@ def build_config(options: LoggingOptions) -> Dict[str, Any]:
 
     # Formatters
     fmts = _formatter_entry(options.use_json_formatter, project_root)
-    
+
     # Select appropriate formatters based on mode
     if options.use_json_formatter:
         file_formatter = "json"

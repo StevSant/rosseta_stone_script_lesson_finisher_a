@@ -27,28 +27,30 @@ class RelPathFormatter(logging.Formatter):
 
 class FileFormatter(RelPathFormatter):
     """Formatter detallado para archivos de log.
-    
+
     Incluye timestamp completo, nivel, ubicación y mensaje.
     Ideal para debugging y auditoría.
     """
-    
+
     def __init__(self, project_root, **kwargs):
-        fmt = "[{asctime}] [{levelname:^8}] {relpath}:{lineno} | {funcName}() | {message}"
+        fmt = (
+            "[{asctime}] [{levelname:^8}] {relpath}:{lineno} | {funcName}() | {message}"
+        )
         super().__init__(
             fmt=fmt,
             style="{",
             datefmt="%Y-%m-%d %H:%M:%S",
             project_root=project_root,
-            **kwargs
+            **kwargs,
         )
 
 
 class ErrorFileFormatter(RelPathFormatter):
     """Formatter especial para logs de error con más contexto.
-    
+
     Incluye información adicional útil para debugging de errores.
     """
-    
+
     def __init__(self, project_root, **kwargs):
         fmt = (
             "{'='*60}\n"
@@ -62,7 +64,7 @@ class ErrorFileFormatter(RelPathFormatter):
             style="{",
             datefmt="%Y-%m-%d %H:%M:%S",
             project_root=project_root,
-            **kwargs
+            **kwargs,
         )
 
     def format(self, record: logging.LogRecord) -> str:
