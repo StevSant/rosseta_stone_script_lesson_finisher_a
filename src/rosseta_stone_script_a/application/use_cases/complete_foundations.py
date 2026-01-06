@@ -2,10 +2,25 @@ import asyncio
 import math
 import random
 import time
+from dataclasses import dataclass, field
+from typing import Dict
 
 from rosseta_stone_script_a.application.ports.foundations_api import FoundationsApiPort
 from rosseta_stone_script_a.application.ports.use_case import UseCasePort
 from rosseta_stone_script_a.domain.entities.path import Path
+
+
+@dataclass
+class CompletionStats:
+    """Statistics about the completion process."""
+
+    total_units_processed: int = 0
+    total_lessons_processed: int = 0
+    total_paths_completed: int = 0
+    total_paths_skipped: int = 0  # Already completed
+    units_completed: list = field(default_factory=list)
+    paths_by_type: Dict[str, int] = field(default_factory=dict)
+    errors: list = field(default_factory=list)
 
 
 class CompleteFoundationsUseCase(UseCasePort):
@@ -26,6 +41,7 @@ class CompleteFoundationsUseCase(UseCasePort):
         self.target_score_percent = target_score_percent
         self.max_start_time_offset_ms = max_start_time_offset_ms
         self.inter_path_delay_ms = inter_path_delay_ms
+        self.stats = CompletionStats()
 
     async def execute(
         self,
@@ -34,7 +50,7 @@ class CompleteFoundationsUseCase(UseCasePort):
         session_token: str,
         school_id: str,
         user_id: str,
-    ) -> None:
+    ) -> CompletionStats:
         """
         Execute the completion process.
 
@@ -44,7 +60,13 @@ class CompleteFoundationsUseCase(UseCasePort):
             session_token: REST API session token
             school_id: School ID
             user_id: User ID
+
+        Returns:
+            CompletionStats: Statistics about what was completed
         """
+        # Reset stats for this execution
+        self.stats = CompletionStats()
+
         self.logger.info("Starting Foundations completion process...")
         if self.units_to_complete:
             self.logger.info(f"Target units to complete: {self.units_to_complete}")
@@ -81,9 +103,10 @@ class CompleteFoundationsUseCase(UseCasePort):
                 )
                 continue
 
-            self.logger.info(
-                f"Processing Unit {unit.unit_number}"
-            )  # Start Time should reset for each unit (logic from JS)
+            self.logger.info(f"Processing Unit {unit.unit_number}")
+            self.stats.total_units_processed += 1
+            self.stats.units_completed.append(unit.unit_number)
+            # Start Time should reset for each unit (logic from JS)
             # JS: const startTime = Date.now() - getRndInteger(0, 432000000);
             start_time = int(time.time() * 1000) - random.randint(
                 0, self.max_start_time_offset_ms
@@ -92,11 +115,19 @@ class CompleteFoundationsUseCase(UseCasePort):
 
             for lesson in unit.lessons:
                 self.logger.info(f"  Processing Lesson {lesson.lesson_number}")
+                self.stats.total_lessons_processed += 1
 
                 for path in lesson.paths:
                     if path.complete:
                         self.logger.debug(f"    Skipping completed path: {path.type}")
+                        self.stats.total_paths_skipped += 1
                         continue
+
+                    # Track path type
+                    self.stats.paths_by_type[path.type] = (
+                        self.stats.paths_by_type.get(path.type, 0) + 1
+                    )
+                    self.stats.total_paths_completed += 1
 
                     task = self._complete_path(
                         path=path,
@@ -132,6 +163,7 @@ class CompleteFoundationsUseCase(UseCasePort):
             self.logger.info("No tasks to execute.")
 
         self.logger.info("Foundations completion process finished.")
+        return self.stats
 
     async def _complete_path(
         self,

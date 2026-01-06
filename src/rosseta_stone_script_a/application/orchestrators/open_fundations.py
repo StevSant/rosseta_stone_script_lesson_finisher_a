@@ -49,5 +49,8 @@ class OpenFundations(OrchestratorPort):
         # Retrieve captured data from the navigate use case's capturer
         captured_data = self.navigate_use_case.session_capturer.get_captured_data()
 
+        # Add user name to captured data
+        captured_data["user_name"] = self.navigate_use_case.user_name
+
         self.logger.info("OpenFluencyBuilder workflow completed successfully")
         return captured_data

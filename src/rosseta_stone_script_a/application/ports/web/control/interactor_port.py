@@ -34,6 +34,15 @@ class InteractorPort(ABC):
         **kwargs,
     ): ...
 
+    @abstractmethod
+    async def get_text(
+        self,
+        target: Union[Selector, object],
+        timeout: int = 5000,
+    ) -> Optional[str]:
+        """Get the text content of an element."""
+        ...
+
     # # Fallback and helper methods as specified in requirements
     # @abstractmethod
     # async def fill_first(self, candidates: List[Selector], text: str) -> bool:

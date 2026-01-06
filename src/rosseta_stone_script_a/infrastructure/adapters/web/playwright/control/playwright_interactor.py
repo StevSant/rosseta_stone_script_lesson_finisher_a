@@ -147,3 +147,27 @@ class InteractorAdapter(InteractorPort, LoggingMixin):
         )
         self.logger.info(f"Press -> {loc} key='{key}'")
         await loc.press(key, **kwargs)
+
+    async def get_text(
+        self,
+        target: Union[Selector, Locator],
+        timeout: int = 5000,
+        *,
+        within: Optional[Scope] = None,
+        within_frame: Optional[str] = None,
+    ) -> Optional[str]:
+        """
+        Get the text content of an element.
+        Returns None if the element is not found.
+        """
+        try:
+            loc = await self._ensure_locator(
+                target, within=within, within_frame=within_frame
+            )
+            await loc.first.wait_for(state="visible", timeout=timeout)
+            text = await loc.first.text_content()
+            self.logger.info(f"GetText -> {loc} text='{text}'")
+            return text
+        except Exception as e:
+            self.logger.warning(f"Failed to get text from element: {e}")
+            return None

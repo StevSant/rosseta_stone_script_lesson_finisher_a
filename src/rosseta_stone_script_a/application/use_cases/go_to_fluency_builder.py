@@ -24,10 +24,14 @@ class GoToFundationsUseCase(UseCasePort):
         self.web_session = web_session
         self.dashboard_page = dashboard_page
         self.session_capturer = session_capturer
+        self.user_name: str | None = None
 
     async def execute(self) -> None:
         """Navigate to Foundations from dashboard."""
         self.logger.info("Navigating to Foundations from dashboard")
+
+        # Capture user name from dashboard
+        await self._capture_user_name()
 
         # --- Start Interception Logic ---
         if self.web_session.network_monitor:
@@ -57,3 +61,14 @@ class GoToFundationsUseCase(UseCasePort):
         await self.web_session.debug_dumpper.dump_screenshot(
             "fluency_builder_workspace"
         )
+
+    async def _capture_user_name(self) -> None:
+        """Capture the user name from the dashboard."""
+        try:
+            self.user_name = await self.dashboard_page.get_user_name()
+            if self.user_name:
+                self.logger.info(f"Captured user name: {self.user_name}")
+            else:
+                self.logger.warning("Could not capture user name from dashboard")
+        except Exception as e:
+            self.logger.error(f"Error capturing user name: {e}")
