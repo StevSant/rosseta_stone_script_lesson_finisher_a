@@ -93,3 +93,25 @@ class RosettaSessionCapturer(LoggingMixin):
     def get_captured_data(self) -> Dict[str, Optional[str]]:
         """Return the captured session data."""
         return self.captured_data
+
+    def is_complete(self) -> bool:
+        """Check if all required session data has been captured."""
+        required_keys = [
+            "authorization",
+            "school_id",
+            "user_id",
+            "lang_code",
+            "session_token",
+        ]
+        return all(self.captured_data.get(key) is not None for key in required_keys)
+
+    def get_missing_keys(self) -> list[str]:
+        """Return list of keys that haven't been captured yet."""
+        required_keys = [
+            "authorization",
+            "school_id",
+            "user_id",
+            "lang_code",
+            "session_token",
+        ]
+        return [key for key in required_keys if self.captured_data.get(key) is None]

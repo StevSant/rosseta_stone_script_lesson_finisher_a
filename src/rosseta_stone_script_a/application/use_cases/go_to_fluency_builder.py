@@ -1,5 +1,3 @@
-import asyncio
-
 from rosseta_stone_script_a.application.ports.web import IWebSession
 from rosseta_stone_script_a.application.ports.web.page import DashboardPagePort
 
@@ -32,11 +30,6 @@ class GoToFundationsUseCase(UseCasePort):
 
         # Wait for page to load
         await self.web_session.navigator.wait_for_load()
-
-        # Wait additional time for Foundations API calls (e.g., /recommended_course)
-        # These requests happen after the page DOM loads
-        self.logger.info("Waiting for Foundations API requests to complete...")
-        await asyncio.sleep(3)
 
         self.logger.info("Successfully navigated to Fluency Builder")
         await self.web_session.debug_dumpper.dump_screenshot(

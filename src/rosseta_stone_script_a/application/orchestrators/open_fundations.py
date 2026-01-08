@@ -1,3 +1,4 @@
+import asyncio
 from json import dumps
 from typing import Any, Dict
 
@@ -23,6 +24,10 @@ class OpenFundations(OrchestratorPort):
     1. Login to Rosetta Stone
     2. Navigate to Fluency Builder workspace
     """
+
+    # Configuration for session capture waiting
+    MAX_CAPTURE_WAIT_SECONDS = 15
+    CAPTURE_POLL_INTERVAL_SECONDS = 0.5
 
     def __init__(
         self,
@@ -64,6 +69,9 @@ class OpenFundations(OrchestratorPort):
         # Step 2: Navigate to Fluency Builder and capture data
         await self.navigate_use_case.execute()
 
+        # Step 3: Wait for all session data to be captured
+        await self._wait_for_session_capture()
+
         # Stop network interception
         if self.web_session.network_monitor:
             self.web_session.network_monitor.remove_request_listener(
@@ -89,3 +97,24 @@ class OpenFundations(OrchestratorPort):
 
         self.logger.info("OpenFluencyBuilder workflow completed successfully")
         return captured_data
+
+    async def _wait_for_session_capture(self) -> None:
+        """Wait for all session data to be captured with polling."""
+        self.logger.info("Waiting for session data capture to complete...")
+
+        elapsed = 0.0
+        while elapsed < self.MAX_CAPTURE_WAIT_SECONDS:
+            if self.session_capturer.is_complete():
+                self.logger.info(f"All session data captured after {elapsed:.1f}s")
+                return
+
+            await asyncio.sleep(self.CAPTURE_POLL_INTERVAL_SECONDS)
+            elapsed += self.CAPTURE_POLL_INTERVAL_SECONDS
+
+        # Log what's still missing after timeout
+        missing = self.session_capturer.get_missing_keys()
+        if missing:
+            self.logger.warning(
+                f"Session capture timeout ({self.MAX_CAPTURE_WAIT_SECONDS}s). "
+                f"Missing data: {missing}"
+            )
