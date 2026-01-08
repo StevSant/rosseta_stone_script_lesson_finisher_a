@@ -76,12 +76,13 @@ class DependencyFactory:
         navigate_use_case = GoToFundationsUseCase(
             web_session=self.web_session,
             dashboard_page=dashboard_page,
-            session_capturer=session_capturer,
         )
         # Create orchestrator
         return OpenFundations(
             login_use_case=login_use_case,
             navigate_use_case=navigate_use_case,
+            web_session=self.web_session,
+            session_capturer=session_capturer,
         )
 
     def create_complete_foundations_orchestrator(

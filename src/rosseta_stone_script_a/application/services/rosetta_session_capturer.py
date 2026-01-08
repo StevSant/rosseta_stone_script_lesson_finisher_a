@@ -27,8 +27,9 @@ class RosettaSessionCapturer(LoggingMixin):
             url = request.url
             headers = request.headers
 
-            # Debug: Log requests (use debug level for less noise)
-            self.logger.debug(f"[RequestCapture] URL: {url}")
+            # Debug: Log relevant requests (rosettastone and tracking domains)
+            if "rosettastone" in url or "tracking" in url:
+                self.logger.debug(f"[RequestCapture] URL: {url}")
 
             # 1. Capture header "authorization" from GraphQL
             if "authorization" in headers:
@@ -66,12 +67,26 @@ class RosettaSessionCapturer(LoggingMixin):
                         f"[RequestCapture] Extracted lang_code={qs['product_identifier'][0]}"
                     )
 
-                # Extract session token
+                # Extract session token from headers
                 if "x-rosettastone-session-token" in headers:
                     self.captured_data["session_token"] = headers[
                         "x-rosettastone-session-token"
                     ]
                     self.logger.info("[RequestCapture] Found session token")
+
+            # 3. Also try to capture session token from other tracking.rosettastone.com requests
+            if (
+                "tracking.rosettastone.com" in url
+                and not self.captured_data["session_token"]
+            ):
+                if "x-rosettastone-session-token" in headers:
+                    self.captured_data["session_token"] = headers[
+                        "x-rosettastone-session-token"
+                    ]
+                    self.logger.info(
+                        f"[RequestCapture] Found session token from tracking URL: {url}"
+                    )
+
         except Exception as e:
             self.logger.error(f"Error in request interceptor: {e}")
 
