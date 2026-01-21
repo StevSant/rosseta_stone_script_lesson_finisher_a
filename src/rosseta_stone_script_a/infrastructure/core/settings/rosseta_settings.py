@@ -10,6 +10,12 @@ class RosettaSettings(BaseSettings):
     rosetta_email: str | None = None
     rosetta_password: str | None = None
     rosetta_units_to_complete: List[int] = []
+    rosetta_lessons_to_complete: List[int] = (
+        []
+    )  # Lecciones específicas a completar (vacío = todas)
+    rosetta_path_types_to_complete: List[str] = (
+        []
+    )  # Tipos de paths/hitos a completar (vacío = todos)
 
     # Progress and timing settings
     rosetta_target_score_percent: int
@@ -25,4 +31,22 @@ class RosettaSettings(BaseSettings):
             if not v.strip():
                 return []
             return [int(x.strip()) for x in v.split(",") if x.strip()]
+        return v
+
+    @field_validator("rosetta_lessons_to_complete", mode="before")
+    @classmethod
+    def parse_lessons_to_complete(cls, v: Union[str, List[int]]) -> List[int]:
+        if isinstance(v, str):
+            if not v.strip():
+                return []
+            return [int(x.strip()) for x in v.split(",") if x.strip()]
+        return v
+
+    @field_validator("rosetta_path_types_to_complete", mode="before")
+    @classmethod
+    def parse_path_types_to_complete(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str):
+            if not v.strip():
+                return []
+            return [x.strip() for x in v.split(",") if x.strip()]
         return v

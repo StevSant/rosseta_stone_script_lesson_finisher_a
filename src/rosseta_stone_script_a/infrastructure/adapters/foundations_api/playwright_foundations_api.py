@@ -1,13 +1,12 @@
-import json
 from typing import Any, Dict
 
 from playwright.async_api import APIRequestContext
 
 from rosseta_stone_script_a.application.ports.foundations_api import FoundationsApiPort
 from rosseta_stone_script_a.domain.entities.course_menu import CourseMenu
-from rosseta_stone_script_a.domain.entities.lesson import Lesson
-from rosseta_stone_script_a.domain.entities.path import Path
-from rosseta_stone_script_a.domain.entities.unit import Unit
+from rosseta_stone_script_a.infrastructure.adapters.foundations_api.course_menu_parser import (
+    CourseMenuParser,
+)
 from rosseta_stone_script_a.shared.mixins.loggin_mixin import LoggingMixin
 
 
@@ -91,49 +90,7 @@ class PlaywrightFoundationsApiAdapter(FoundationsApiPort, LoggingMixin):
             raise Exception(f"Failed to fetch course menu: {response.status}")
 
         data = await response.json()
-        return self._parse_course_menu(data)
-
-    def _parse_course_menu(self, data: Dict[str, Any]) -> CourseMenu:
-        menu_data = data.get("data", {}).get("courseMenu", {})
-        units = []
-        for u in menu_data.get("units", []):
-            lessons = []
-            for l in u.get("lessons", []):
-                paths = []
-                for p in l.get("paths", []):
-                    paths.append(
-                        Path(
-                            unit_index=p.get("unitIndex"),
-                            lesson_index=p.get("lessonIndex"),
-                            curriculum_lesson_index=p.get("curriculumLessonIndex"),
-                            type=p.get("type"),
-                            course=p.get("course"),
-                            num_challenges=p.get("numChallenges", 0),
-                            time_estimate=p.get("timeEstimate", 0),
-                            complete=p.get("complete", False),
-                            percent_complete=p.get("percentComplete", 0),
-                        )
-                    )
-                lessons.append(
-                    Lesson(
-                        id=l.get("id"),
-                        index=l.get("index"),
-                        lesson_number=l.get("lessonNumber"),
-                        paths=paths,
-                    )
-                )
-            units.append(
-                Unit(
-                    id=u.get("id"),
-                    index=u.get("index"),
-                    unit_number=u.get("unitNumber"),
-                    lessons=lessons,
-                )
-            )
-
-        return CourseMenu(
-            current_course_id=menu_data.get("currentCourseId"), units=units
-        )
+        return CourseMenuParser.parse(data)
 
     async def update_path_score(
         self,

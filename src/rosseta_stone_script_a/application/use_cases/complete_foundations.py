@@ -1,26 +1,13 @@
 import asyncio
-import math
 import random
 import time
-from dataclasses import dataclass, field
-from typing import Dict
 
 from rosseta_stone_script_a.application.ports.foundations_api import FoundationsApiPort
 from rosseta_stone_script_a.application.ports.use_case import UseCasePort
+from rosseta_stone_script_a.application.services.content_filter import ContentFilter
+from rosseta_stone_script_a.application.services.path_calculator import PathCalculator
+from rosseta_stone_script_a.domain.entities.completion_stats import CompletionStats
 from rosseta_stone_script_a.domain.entities.path import Path
-
-
-@dataclass
-class CompletionStats:
-    """Statistics about the completion process."""
-
-    total_units_processed: int = 0
-    total_lessons_processed: int = 0
-    total_paths_completed: int = 0
-    total_paths_skipped: int = 0  # Already completed
-    units_completed: list = field(default_factory=list)
-    paths_by_type: Dict[str, int] = field(default_factory=dict)
-    errors: list = field(default_factory=list)
 
 
 class CompleteFoundationsUseCase(UseCasePort):
@@ -32,16 +19,26 @@ class CompleteFoundationsUseCase(UseCasePort):
         self,
         api_port: FoundationsApiPort,
         units_to_complete: list[int] = None,
+        lessons_to_complete: list[int] = None,
+        path_types_to_complete: list[str] = None,
         target_score_percent: int = 100,
         max_start_time_offset_ms: int = 432000000,
         inter_path_delay_ms: int = 500,
     ):
         self.api_port = api_port
-        self.units_to_complete = units_to_complete or []
-        self.target_score_percent = target_score_percent
-        self.max_start_time_offset_ms = max_start_time_offset_ms
-        self.inter_path_delay_ms = inter_path_delay_ms
         self.stats = CompletionStats()
+
+        # Initialize services
+        self.content_filter = ContentFilter(
+            units_to_complete=units_to_complete,
+            lessons_to_complete=lessons_to_complete,
+            path_types_to_complete=path_types_to_complete,
+        )
+        self.path_calculator = PathCalculator(
+            target_score_percent=target_score_percent,
+            max_start_time_offset_ms=max_start_time_offset_ms,
+        )
+        self.inter_path_delay_ms = inter_path_delay_ms
 
     async def execute(
         self,
@@ -68,10 +65,26 @@ class CompleteFoundationsUseCase(UseCasePort):
         self.stats = CompletionStats()
 
         self.logger.info("Starting Foundations completion process...")
-        if self.units_to_complete:
-            self.logger.info(f"Target units to complete: {self.units_to_complete}")
+        if self.content_filter.units_to_complete:
+            self.logger.info(
+                f"Target units to complete: {self.content_filter.units_to_complete}"
+            )
         else:
             self.logger.info("No specific units configured. Processing ALL units.")
+        if self.content_filter.lessons_to_complete:
+            self.logger.info(
+                f"Target lessons to complete: {self.content_filter.lessons_to_complete}"
+            )
+        else:
+            self.logger.info("No specific lessons configured. Processing ALL lessons.")
+        if self.content_filter.path_types_to_complete:
+            self.logger.info(
+                f"Target path types to complete: {self.content_filter.path_types_to_complete}"
+            )
+        else:
+            self.logger.info(
+                "No specific path types configured. Processing ALL path types."
+            )
 
         # 1. Fetch Course Menu
         try:
@@ -94,33 +107,45 @@ class CompleteFoundationsUseCase(UseCasePort):
 
         for unit in course_menu.units:
             # Filter units if configured
-            if (
-                self.units_to_complete
-                and unit.unit_number not in self.units_to_complete
-            ):
-                self.logger.debug(
-                    f"Skipping Unit {unit.unit_number} (not in target list)"
+            if not self.content_filter.should_process_unit(unit):
+                self.content_filter.log_skip_reason(
+                    "Unit", unit.unit_number, "not in target list"
                 )
                 continue
 
             self.logger.info(f"Processing Unit {unit.unit_number}")
             self.stats.total_units_processed += 1
             self.stats.units_completed.append(unit.unit_number)
-            # Start Time should reset for each unit (logic from JS)
-            # JS: const startTime = Date.now() - getRndInteger(0, 432000000);
+
+            # Start Time should reset for each unit
             start_time = int(time.time() * 1000) - random.randint(
-                0, self.max_start_time_offset_ms
+                0, self.path_calculator.max_start_time_offset_ms
             )
             time_so_far = 0
 
             for lesson in unit.lessons:
+                # Filter lessons if configured
+                if not self.content_filter.should_process_lesson(lesson):
+                    self.content_filter.log_skip_reason(
+                        "Lesson", lesson.lesson_number, "not in target list"
+                    )
+                    continue
+
                 self.logger.info(f"  Processing Lesson {lesson.lesson_number}")
                 self.stats.total_lessons_processed += 1
 
                 for path in lesson.paths:
-                    if path.complete:
-                        self.logger.debug(f"    Skipping completed path: {path.type}")
-                        self.stats.total_paths_skipped += 1
+                    # Filter path types if configured and check completion
+                    if not self.content_filter.should_process_path(path):
+                        if path.complete:
+                            self.logger.debug(
+                                f"    Skipping completed path: {path.type}"
+                            )
+                            self.stats.total_paths_skipped += 1
+                        else:
+                            self.content_filter.log_skip_reason(
+                                "path type", path.type, "not in target list"
+                            )
                         continue
 
                     # Track path type
@@ -139,22 +164,10 @@ class CompleteFoundationsUseCase(UseCasePort):
                     )
                     tasks.append(sem_task(task))
 
-                    # Update time_so_far for next path
-                    # Logic from JS:
-                    # timeInMinutes = timeEstimate + getRndInteger(...)
-                    # timeInMilliseconds = timeInMinutes * 60000 + getRndInteger(...)
-                    # timeSoFar += timeInMilliseconds + getRndInteger(...)
-
-                    time_estimate = path.time_estimate
-                    time_in_minutes = time_estimate + random.randint(
-                        -1 * math.floor(time_estimate / 3),
-                        math.floor(time_estimate / 3),
+                    # Update time_so_far for next path using calculator
+                    time_so_far += self.path_calculator.calculate_next_time_increment(
+                        path.time_estimate
                     )
-                    time_in_milliseconds = time_in_minutes * 60000 + random.randint(
-                        0, 6000
-                    )
-
-                    time_so_far += time_in_milliseconds + random.randint(0, 60000)
 
         if tasks:
             self.logger.info(f"Executing {len(tasks)} tasks concurrently...")
@@ -174,19 +187,11 @@ class CompleteFoundationsUseCase(UseCasePort):
         start_time: int,
         time_so_far: int,
     ) -> None:
-        # Calculate time and score
-        time_estimate = path.time_estimate
-        time_in_minutes = time_estimate + random.randint(
-            -1 * math.floor(time_estimate / 3), math.floor(time_estimate / 3)
+        """Complete a single path using the API."""
+        # Calculate time and score using calculator service
+        calculation = self.path_calculator.calculate_path_completion(
+            path, start_time, time_so_far
         )
-        time_in_milliseconds = time_in_minutes * 60000 + random.randint(0, 6000)
-
-        # JS: const percentCorrect = 100;
-        percent_correct = self.target_score_percent
-        questions_correct = math.ceil(path.num_challenges * (percent_correct / 100))
-
-        # JS: let timeCompleted = startTime + timeSoFar;
-        time_completed = start_time + time_so_far + time_in_milliseconds
 
         self.logger.info(
             f"    Completing path: {path.type} (Course: {path.course}, Unit: {path.unit_index}, Lesson: {path.lesson_index})"
@@ -200,9 +205,9 @@ class CompleteFoundationsUseCase(UseCasePort):
             unit_index=path.unit_index % 4,
             lesson_index=path.curriculum_lesson_index,
             path_type=path.type,
-            score_correct=questions_correct,
-            score_incorrect=path.num_challenges - questions_correct,
-            duration_ms=time_in_milliseconds,
-            timestamp_ms=time_completed,
+            score_correct=calculation.questions_correct,
+            score_incorrect=calculation.questions_incorrect,
+            duration_ms=calculation.time_in_milliseconds,
+            timestamp_ms=calculation.time_completed,
             num_challenges=path.num_challenges,
         )
