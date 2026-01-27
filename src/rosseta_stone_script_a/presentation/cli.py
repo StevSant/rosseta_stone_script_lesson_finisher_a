@@ -23,6 +23,7 @@ class RosettaCLI(LoggingMixin):
         target_score_percent: int = 100,
         max_start_time_offset_ms: int = 432000000,
         inter_path_delay_ms: int = 500,
+        force_recomplete: bool = False,
     ):
         """
         Run a hierarchical learning session following Course → Lesson → Activity flow.
@@ -57,6 +58,7 @@ class RosettaCLI(LoggingMixin):
                     target_score_percent=target_score_percent,
                     max_start_time_offset_ms=max_start_time_offset_ms,
                     inter_path_delay_ms=inter_path_delay_ms,
+                    force_recomplete=force_recomplete,
                 )
 
                 # Create and execute hierarchical learning session orchestrator
@@ -100,6 +102,7 @@ class RosettaCLI(LoggingMixin):
                 target_score_percent=rosseta_settings.rosetta_target_score_percent,
                 max_start_time_offset_ms=rosseta_settings.rosetta_max_start_time_offset_ms,
                 inter_path_delay_ms=rosseta_settings.rosetta_inter_path_delay_ms,
+                force_recomplete=rosseta_settings.rosetta_force_recomplete,
             )
         )
 

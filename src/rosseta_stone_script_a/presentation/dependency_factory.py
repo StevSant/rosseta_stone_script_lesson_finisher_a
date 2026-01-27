@@ -41,6 +41,7 @@ class DependencyFactory:
         target_score_percent: int = 100,
         max_start_time_offset_ms: int = 432000000,
         inter_path_delay_ms: int = 500,
+        force_recomplete: bool = False,
     ):
         self.web_session = web_session
         self.rosseta_login_url = rosseta_login_url
@@ -50,6 +51,7 @@ class DependencyFactory:
         self.target_score_percent = target_score_percent
         self.max_start_time_offset_ms = max_start_time_offset_ms
         self.inter_path_delay_ms = inter_path_delay_ms
+        self.force_recomplete = force_recomplete
 
     def create_open_fundations(self) -> OpenFundations:
         """Create OpenFluencyBuilder orchestrator with dependencies."""
@@ -108,6 +110,7 @@ class DependencyFactory:
             target_score_percent=self.target_score_percent,
             max_start_time_offset_ms=self.max_start_time_offset_ms,
             inter_path_delay_ms=self.inter_path_delay_ms,
+            force_recomplete=self.force_recomplete,
         )
 
         return CompleteFoundationsOrchestrator(

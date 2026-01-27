@@ -24,6 +24,7 @@ class CompleteFoundationsUseCase(UseCasePort):
         target_score_percent: int = 100,
         max_start_time_offset_ms: int = 432000000,
         inter_path_delay_ms: int = 500,
+        force_recomplete: bool = False,
     ):
         self.api_port = api_port
         self.stats = CompletionStats()
@@ -33,6 +34,7 @@ class CompleteFoundationsUseCase(UseCasePort):
             units_to_complete=units_to_complete,
             lessons_to_complete=lessons_to_complete,
             path_types_to_complete=path_types_to_complete,
+            force_recomplete=force_recomplete,
         )
         self.path_calculator = PathCalculator(
             target_score_percent=target_score_percent,
@@ -135,18 +137,43 @@ class CompleteFoundationsUseCase(UseCasePort):
                 self.stats.total_lessons_processed += 1
 
                 for path in lesson.paths:
+                    # Log all review paths for debugging
+                    if path.type == "review":
+                        self.logger.info(
+                            f"    [DEBUG] Review found: complete={path.complete}, percent_complete={path.percent_complete}%"
+                        )
+
                     # Filter path types if configured and check completion
-                    if not self.content_filter.should_process_path(path):
-                        if path.complete:
-                            self.logger.debug(
-                                f"    Skipping completed path: {path.type}"
+                    should_process = self.content_filter.should_process_path(path)
+
+                    if not should_process:
+                        # Log why we're skipping
+                        if path.type not in (
+                            self.content_filter.path_types_to_complete or []
+                        ):
+                            self.logger.info(
+                                f"    Skipping {path.type}: not in target list"
                             )
-                            self.stats.total_paths_skipped += 1
+                        elif path.complete and path.percent_complete >= 100:
+                            self.logger.info(
+                                f"    Skipping {path.type}: already 100% complete"
+                            )
                         else:
-                            self.content_filter.log_skip_reason(
-                                "path type", path.type, "not in target list"
+                            self.logger.info(
+                                f"    Skipping {path.type}: filtered by configuration (complete={path.complete}, percent={path.percent_complete}%)"
                             )
+                        self.stats.total_paths_skipped += 1
                         continue
+
+                    # Log if we're forcing recomplete or processing incomplete path
+                    if self.content_filter.force_recomplete and path.complete:
+                        self.logger.info(
+                            f"    FORCE RE-COMPLETING {path.type} (was marked complete)"
+                        )
+                    elif path.complete and path.percent_complete < 100:
+                        self.logger.info(
+                            f"    Processing {path.type}: {path.percent_complete}% complete (will complete to 100%)"
+                        )
 
                     # Track path type
                     self.stats.paths_by_type[path.type] = (

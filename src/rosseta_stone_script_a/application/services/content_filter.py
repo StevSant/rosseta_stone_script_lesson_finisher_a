@@ -14,10 +14,12 @@ class ContentFilter(LoggingMixin):
         units_to_complete: List[int] = None,
         lessons_to_complete: List[int] = None,
         path_types_to_complete: List[str] = None,
+        force_recomplete: bool = False,
     ):
         self.units_to_complete = units_to_complete or []
         self.lessons_to_complete = lessons_to_complete or []
         self.path_types_to_complete = path_types_to_complete or []
+        self.force_recomplete = force_recomplete
 
     def should_process_unit(self, unit: Unit) -> bool:
         """Check if a unit should be processed based on configuration."""
@@ -33,14 +35,19 @@ class ContentFilter(LoggingMixin):
 
     def should_process_path(self, path: Path) -> bool:
         """Check if a path should be processed based on configuration and completion status."""
-        # Skip if already complete
-        if path.complete:
+        # Check path type filter first
+        if self.path_types_to_complete and path.type not in self.path_types_to_complete:
             return False
 
-        # Check path type filter
-        if not self.path_types_to_complete:
+        # If force_recomplete is enabled, process even if marked as complete
+        if self.force_recomplete:
             return True
-        return path.type in self.path_types_to_complete
+
+        # Skip if already 100% complete (and not forcing)
+        if path.complete and path.percent_complete >= 100:
+            return False
+
+        return True
 
     def log_skip_reason(
         self, item_type: str, item_identifier: str | int, reason: str
