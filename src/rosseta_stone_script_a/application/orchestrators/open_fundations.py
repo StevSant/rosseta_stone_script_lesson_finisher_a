@@ -7,7 +7,7 @@ from rosseta_stone_script_a.application.ports.web import IWebSession
 from rosseta_stone_script_a.application.services.rosetta_session_capturer import (
     RosettaSessionCapturer,
 )
-from rosseta_stone_script_a.application.use_cases.go_to_fluency_builder import (
+from rosseta_stone_script_a.application.use_cases.go_to_foundations import (
     GoToFundationsUseCase,
 )
 from rosseta_stone_script_a.application.use_cases.login_rosseta import (
@@ -18,11 +18,11 @@ from rosseta_stone_script_a.domain.entities.credentials import Credentials
 
 class OpenFundations(OrchestratorPort):
     """
-    Orchestrator that composes login and navigation to Fluency Builder.
+    Orchestrator that composes login and navigation to Foundations.
 
     Workflow:
     1. Login to Rosetta Stone
-    2. Navigate to Fluency Builder workspace
+    2. Navigate to Foundations workspace
     """
 
     # Configuration for session capture waiting
@@ -44,7 +44,7 @@ class OpenFundations(OrchestratorPort):
 
     async def execute(self, credentials: Credentials) -> Dict[str, Any]:
         """
-        Execute the OpenFluencyBuilder workflow.
+        Execute the OpenFoundations workflow.
 
         Args:
             credentials: User credentials for login
@@ -52,7 +52,7 @@ class OpenFundations(OrchestratorPort):
         Returns:
             Dict[str, Any]: Captured session data
         """
-        self.logger.info("Starting OpenFluencyBuilder workflow")
+        self.logger.info("Starting OpenFoundations workflow")
 
         # Start network interception BEFORE login to capture all auth tokens
         if self.web_session.network_monitor:
@@ -66,7 +66,7 @@ class OpenFundations(OrchestratorPort):
         # Step 1: Login to Rosetta Stone
         await self.login_use_case.execute(credentials)
 
-        # Step 2: Navigate to Fluency Builder and capture data
+        # Step 2: Navigate to Foundations and capture data
         await self.navigate_use_case.execute()
 
         # Step 3: Wait for all session data to be captured
@@ -95,7 +95,7 @@ class OpenFundations(OrchestratorPort):
             "password": credentials.password,
         }
 
-        self.logger.info("OpenFluencyBuilder workflow completed successfully")
+        self.logger.info("OpenFoundations workflow completed successfully")
         return captured_data
 
     async def _wait_for_session_capture(self) -> None:

@@ -13,7 +13,7 @@ from rosseta_stone_script_a.infrastructure.adapters.web.playwright.patterns impo
 
 class DashboardPage(DashboardPagePort):
     """
-    Dashboard page adapter for navigating to Fluency Builder.
+    Dashboard page adapter for navigating to Foundations.
     All interactions go through self.web_session.interactor.
     """
 
@@ -21,7 +21,7 @@ class DashboardPage(DashboardPagePort):
         super().__init__()
         self.web_session = web_session
 
-        # Selectors for Fluency Builder navigation
+        # Selectors for Foundations navigation
         self.FOUNDATIONS_BTN = Selector.by_text(LessonPatterns.FOUNDATIONS)
         # Selector for user name on dashboard
         self.USER_NAME_SELECTOR = Selector.by_css('[data-qa="DashboardUserName"]')
@@ -34,15 +34,15 @@ class DashboardPage(DashboardPagePort):
             if await self.web_session.interactor.exists(
                 self.FOUNDATIONS_BTN, timeout=2000
             ):
-                self.logger.info("Found Fluency Builder button, clicking it")
+                self.logger.info("Found Foundations button, clicking it")
                 await self.web_session.interactor.click(self.FOUNDATIONS_BTN)
             else:
-                self.logger.error("Fluency Builder navigation element not found")
-                raise RuntimeError("Fluency Builder navigation element not found")
-            self.logger.info("Successfully opened Fluency Builder")
+                self.logger.error("Foundations navigation element not found")
+                raise RuntimeError("Foundations navigation element not found")
+            self.logger.info("Successfully opened Foundations")
         except Exception as e:
-            self.logger.error(f"Failed to navigate to Fluency Builder: {e}")
-            raise RuntimeError(f"Failed to navigate to Fluency Builder: {e}")
+            self.logger.error(f"Failed to navigate to Foundations: {e}")
+            raise RuntimeError(f"Failed to navigate to Foundations: {e}")
 
     async def get_user_name(self) -> Optional[str]:
         """Get the user's name displayed on the dashboard."""

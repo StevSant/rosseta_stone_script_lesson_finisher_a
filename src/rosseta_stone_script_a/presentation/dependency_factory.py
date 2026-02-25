@@ -11,7 +11,7 @@ from rosseta_stone_script_a.application.services.rosetta_session_capturer import
 from rosseta_stone_script_a.application.use_cases.complete_foundations import (
     CompleteFoundationsUseCase,
 )
-from rosseta_stone_script_a.application.use_cases.go_to_fluency_builder import (
+from rosseta_stone_script_a.application.use_cases.go_to_foundations import (
     GoToFundationsUseCase,
 )
 from rosseta_stone_script_a.application.use_cases.login_rosseta import (
@@ -54,7 +54,7 @@ class DependencyFactory:
         self.force_recomplete = force_recomplete
 
     def create_open_fundations(self) -> OpenFundations:
-        """Create OpenFluencyBuilder orchestrator with dependencies."""
+        """Create OpenFoundations orchestrator with dependencies."""
         # Create pages
         login_page = LoginPage(
             web_session=self.web_session, rosetta_login_url=self.rosseta_login_url

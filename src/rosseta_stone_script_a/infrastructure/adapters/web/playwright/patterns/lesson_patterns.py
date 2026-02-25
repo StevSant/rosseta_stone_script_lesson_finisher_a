@@ -1,5 +1,5 @@
 """
-Lesson-specific patterns for Fluency Builder flows.
+Lesson-specific patterns for Foundations flows.
 """
 
 from dataclasses import dataclass
@@ -15,7 +15,7 @@ cci = compile_case_insensitive
 class LessonPatterns:
     """Patterns for lesson management and navigation."""
 
-    # Fluency Builder navigation
+    # Foundations navigation
     FOUNDATIONS = cci(r"foundations|fundamentos")
 
 
