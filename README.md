@@ -49,7 +49,7 @@ El proyecto está estructurado en módulos que separan la lógica de negocio, la
 Ejecuta el script principal:
 
 ```bash
-python -m src.rosseta_stone_script_a
+uv run python -m src.rosseta_stone_script_a
 ```
 
 Puedes personalizar el comportamiento mediante argumentos CLI o modificando la configuración.

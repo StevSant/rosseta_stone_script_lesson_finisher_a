@@ -22,7 +22,7 @@ class RosettaSettings(BaseSettings):
     rosetta_max_start_time_offset_ms: int = 432000000  # ~5 days
     rosetta_inter_path_delay_ms: int = 500
     rosetta_force_recomplete: bool = (
-        False  # Force re-complete even if marked as complete
+        True  # Force re-complete even if marked as complete
     )
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
