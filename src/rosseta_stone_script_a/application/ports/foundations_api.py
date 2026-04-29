@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
 
 from rosseta_stone_script_a.domain.entities.course_menu import CourseMenu
+from rosseta_stone_script_a.domain.values.path_score_result import PathScoreResult
 
 
 class FoundationsApiPort(ABC):
@@ -29,6 +29,6 @@ class FoundationsApiPort(ABC):
         duration_ms: int,
         timestamp_ms: int,
         num_challenges: int,
-    ) -> None:
+    ) -> PathScoreResult:
         """Update the score/progress for a specific path (activity)."""
         ...

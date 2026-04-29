@@ -67,6 +67,27 @@ class ReportGenerator(LoggingMixin):
             f.write(report_content)
 
         self.logger.info(f"Completion report saved to {file_path}")
+
+        # Write a separate failures dump if there were any
+        if stats.failed_paths:
+            failures_path = self.output_dir / f"{safe_name}_{timestamp}_failures.txt"
+            failures_content = self._build_failures_content(stats)
+            with open(failures_path, "w", encoding="utf-8") as f:
+                f.write(failures_content)
+            self.logger.warning(
+                f"Wrote {len(stats.failed_paths)} path-score failures to {failures_path}"
+            )
+
+        # Write a full attempts audit (every path_score call, success or fail)
+        if stats.all_path_results:
+            attempts_path = self.output_dir / f"{safe_name}_{timestamp}_attempts.csv"
+            attempts_content = self._build_attempts_csv(stats)
+            with open(attempts_path, "w", encoding="utf-8", newline="") as f:
+                f.write(attempts_content)
+            self.logger.info(
+                f"Wrote {len(stats.all_path_results)} path-score attempts to {attempts_path}"
+            )
+
         return file_path
 
     def _get_safe_name(self, user_name: str | None) -> str:
@@ -121,7 +142,9 @@ class ReportGenerator(LoggingMixin):
             f"  Units Processed: {stats.total_units_processed}",
             f"  Units Completed (this session): {sorted(stats.units_completed)}",
             f"  Lessons Processed: {stats.total_lessons_processed}",
-            f"  Paths Completed: {stats.total_paths_completed}",
+            f"  Paths Attempted: {stats.total_paths_completed}",
+            f"  Paths Succeeded (API 2xx): {stats.total_paths_succeeded}",
+            f"  Paths Failed (API non-2xx / exception): {stats.total_paths_failed}",
             f"  Paths Skipped (already done): {stats.total_paths_skipped}",
             "",
             "HISTORICAL PROGRESS",
@@ -154,6 +177,28 @@ class ReportGenerator(LoggingMixin):
             for error in stats.errors:
                 report_lines.append(f"  - {error}")
 
+        if stats.failed_paths:
+            report_lines.extend(
+                [
+                    "",
+                    "FAILED PATH SCORES (summary — see _failures.txt for detail)",
+                    "-" * 40,
+                ]
+            )
+            failures_by_status: Dict[Any, int] = {}
+            failures_by_unit: Dict[Any, int] = {}
+            for fp in stats.failed_paths:
+                failures_by_status[fp.status] = failures_by_status.get(fp.status, 0) + 1
+                failures_by_unit[fp.unit_index] = (
+                    failures_by_unit.get(fp.unit_index, 0) + 1
+                )
+            for status, count in sorted(failures_by_status.items()):
+                report_lines.append(f"  HTTP {status}: {count}")
+            report_lines.append("")
+            report_lines.append("  Failed-path counts by unit_index sent to API:")
+            for unit_idx, count in sorted(failures_by_unit.items()):
+                report_lines.append(f"    unit_index={unit_idx}: {count}")
+
         report_lines.extend(
             [
                 "",
@@ -164,3 +209,63 @@ class ReportGenerator(LoggingMixin):
         )
 
         return "\n".join(report_lines)
+
+    def _build_attempts_csv(self, stats: CompletionStats) -> str:
+        """Build a CSV of every path_score attempt (success and failure)."""
+        import csv
+        import io
+
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(
+            [
+                "course",
+                "unit_index_sent",
+                "lesson_index_sent",
+                "path_type",
+                "success",
+                "http_status",
+                "error",
+                "response_body_snippet",
+            ]
+        )
+        for r in stats.all_path_results:
+            snippet = (r.response_body or "").replace("\n", " ").replace("\r", " ")[:200]
+            writer.writerow(
+                [
+                    r.course,
+                    r.unit_index,
+                    r.lesson_index,
+                    r.path_type,
+                    "1" if r.success else "0",
+                    r.status,
+                    r.error,
+                    snippet,
+                ]
+            )
+        return buf.getvalue()
+
+    def _build_failures_content(self, stats: CompletionStats) -> str:
+        """Build a detailed dump of every failed path_score call."""
+        lines = [
+            "=" * 60,
+            "ROSETTA STONE - PATH SCORE FAILURES",
+            "=" * 60,
+            f"Total failures: {len(stats.failed_paths)}",
+            "",
+        ]
+        for i, fp in enumerate(stats.failed_paths, start=1):
+            lines.extend(
+                [
+                    f"[{i}] {fp.course} unit_index={fp.unit_index} "
+                    f"lesson_index={fp.lesson_index} path_type={fp.path_type}",
+                    f"    HTTP status: {fp.status}",
+                ]
+            )
+            if fp.error:
+                lines.append(f"    error: {fp.error}")
+            if fp.response_body:
+                snippet = fp.response_body.replace("\n", " ")[:500]
+                lines.append(f"    body: {snippet}")
+            lines.append("")
+        return "\n".join(lines)

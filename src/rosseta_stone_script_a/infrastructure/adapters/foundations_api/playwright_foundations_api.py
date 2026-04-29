@@ -1,9 +1,12 @@
-from typing import Any, Dict
+import json
+from datetime import datetime
+from pathlib import Path
 
 from playwright.async_api import APIRequestContext
 
 from rosseta_stone_script_a.application.ports.foundations_api import FoundationsApiPort
 from rosseta_stone_script_a.domain.entities.course_menu import CourseMenu
+from rosseta_stone_script_a.domain.values.path_score_result import PathScoreResult
 from rosseta_stone_script_a.infrastructure.adapters.foundations_api.course_menu_parser import (
     CourseMenuParser,
 )
@@ -13,8 +16,13 @@ from rosseta_stone_script_a.shared.mixins.loggin_mixin import LoggingMixin
 class PlaywrightFoundationsApiAdapter(FoundationsApiPort, LoggingMixin):
     """Adapter for Foundations API using Playwright's APIRequestContext."""
 
-    def __init__(self, request_context: APIRequestContext):
+    def __init__(
+        self,
+        request_context: APIRequestContext,
+        diagnostics_dir: Path | None = None,
+    ):
         self.request_context = request_context
+        self.diagnostics_dir = diagnostics_dir or Path("logs/diagnostics")
 
     async def get_course_menu(
         self, authorization: str, language_code: str
@@ -90,7 +98,22 @@ class PlaywrightFoundationsApiAdapter(FoundationsApiPort, LoggingMixin):
             raise Exception(f"Failed to fetch course menu: {response.status}")
 
         data = await response.json()
+        self._dump_course_menu_response(data, language_code)
         return CourseMenuParser.parse(data)
+
+    def _dump_course_menu_response(self, data: dict, language_code: str) -> None:
+        """Write the raw GraphQL course menu response for diagnostic inspection."""
+        try:
+            self.diagnostics_dir.mkdir(parents=True, exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_path = (
+                self.diagnostics_dir / f"course_menu_{language_code}_{timestamp}.json"
+            )
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            self.logger.info(f"Dumped raw course menu response to {file_path}")
+        except Exception as exc:
+            self.logger.warning(f"Could not dump course menu response: {exc}")
 
     async def update_path_score(
         self,
@@ -106,7 +129,7 @@ class PlaywrightFoundationsApiAdapter(FoundationsApiPort, LoggingMixin):
         duration_ms: int,
         timestamp_ms: int,
         num_challenges: int,
-    ) -> None:
+    ) -> PathScoreResult:
         url = f"https://tracking.rosettastone.com/ee/ce/{school_id}/users/{user_id}/path_scores"
 
         params = {
@@ -153,14 +176,53 @@ class PlaywrightFoundationsApiAdapter(FoundationsApiPort, LoggingMixin):
             f"Updating path score: {course} U{unit_index} L{lesson_index} {path_type}"
         )
 
-        response = await self.request_context.post(
-            url, params=params, headers=headers, data=body
-        )
+        try:
+            response = await self.request_context.post(
+                url, params=params, headers=headers, data=body
+            )
+        except Exception as exc:
+            self.logger.error(
+                f"Exception updating path score {course} U{unit_index} L{lesson_index} {path_type}: {exc}"
+            )
+            return PathScoreResult(
+                success=False,
+                status=0,
+                course=course,
+                unit_index=unit_index,
+                lesson_index=lesson_index,
+                path_type=path_type,
+                error=str(exc),
+            )
+
+        body_text = ""
+        try:
+            body_text = await response.text()
+        except Exception:
+            body_text = "<could not read body>"
 
         if not response.ok:
             self.logger.error(
-                f"Failed to update path score: {response.status} - {await response.text()}"
+                f"Failed path_score {course} U{unit_index} L{lesson_index} {path_type}: {response.status} - {body_text}"
             )
-            # We might not want to raise here to allow continuing with other paths
-        else:
-            self.logger.info(f"Successfully updated path: {path_type}")
+            return PathScoreResult(
+                success=False,
+                status=response.status,
+                course=course,
+                unit_index=unit_index,
+                lesson_index=lesson_index,
+                path_type=path_type,
+                response_body=body_text,
+            )
+
+        self.logger.info(
+            f"Successfully updated path: {course} U{unit_index} L{lesson_index} {path_type}"
+        )
+        return PathScoreResult(
+            success=True,
+            status=response.status,
+            course=course,
+            unit_index=unit_index,
+            lesson_index=lesson_index,
+            path_type=path_type,
+            response_body=body_text,
+        )

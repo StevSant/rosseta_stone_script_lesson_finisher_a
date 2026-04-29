@@ -8,6 +8,7 @@ from rosseta_stone_script_a.application.services.content_filter import ContentFi
 from rosseta_stone_script_a.application.services.path_calculator import PathCalculator
 from rosseta_stone_script_a.domain.entities.completion_stats import CompletionStats
 from rosseta_stone_script_a.domain.entities.path import Path
+from rosseta_stone_script_a.domain.values.path_score_result import PathScoreResult
 
 
 class CompleteFoundationsUseCase(UseCasePort):
@@ -105,7 +106,7 @@ class CompleteFoundationsUseCase(UseCasePort):
 
         async def sem_task(task):
             async with sem:
-                await task
+                return await task
 
         for unit in course_menu.units:
             # Filter units if configured
@@ -198,12 +199,46 @@ class CompleteFoundationsUseCase(UseCasePort):
 
         if tasks:
             self.logger.info(f"Executing {len(tasks)} tasks concurrently...")
-            await asyncio.gather(*tasks)
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            self._record_results(results)
         else:
             self.logger.info("No tasks to execute.")
 
-        self.logger.info("Foundations completion process finished.")
+        self.logger.info(
+            f"Foundations completion process finished. "
+            f"Attempted={self.stats.total_paths_completed}, "
+            f"Succeeded={self.stats.total_paths_succeeded}, "
+            f"Failed={self.stats.total_paths_failed}"
+        )
         return self.stats
+
+    def _record_results(self, results: list) -> None:
+        """Aggregate per-path results from asyncio.gather into stats."""
+        for result in results:
+            if isinstance(result, BaseException):
+                self.stats.total_paths_failed += 1
+                self.stats.errors.append(f"Task raised: {result!r}")
+                exc_result = PathScoreResult(
+                    success=False,
+                    status=0,
+                    course="<unknown>",
+                    unit_index=-1,
+                    lesson_index=-1,
+                    path_type="<unknown>",
+                    error=repr(result),
+                )
+                self.stats.failed_paths.append(exc_result)
+                self.stats.all_path_results.append(exc_result)
+                continue
+            if result is None:
+                # Path was filtered out at task creation; nothing to record
+                continue
+            self.stats.all_path_results.append(result)
+            if result.success:
+                self.stats.total_paths_succeeded += 1
+            else:
+                self.stats.total_paths_failed += 1
+                self.stats.failed_paths.append(result)
 
     async def _complete_path(
         self,
@@ -213,7 +248,7 @@ class CompleteFoundationsUseCase(UseCasePort):
         user_id: str,
         start_time: int,
         time_so_far: int,
-    ) -> None:
+    ) -> PathScoreResult:
         """Complete a single path using the API."""
         # Calculate time and score using calculator service
         calculation = self.path_calculator.calculate_path_completion(
@@ -224,7 +259,7 @@ class CompleteFoundationsUseCase(UseCasePort):
             f"    Completing path: {path.type} (Course: {path.course}, Unit: {path.unit_index}, Lesson: {path.lesson_index})"
         )
 
-        await self.api_port.update_path_score(
+        return await self.api_port.update_path_score(
             session_token=session_token,
             school_id=school_id,
             user_id=user_id,
