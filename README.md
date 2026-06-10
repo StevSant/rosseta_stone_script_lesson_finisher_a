@@ -54,6 +54,21 @@ uv run python -m src.rosseta_stone_script_a
 
 Puedes personalizar el comportamiento mediante argumentos CLI o modificando la configuración.
 
+## Compilar el .exe
+
+```bash
+uv run --group dev python build.py
+```
+
+El ejecutable se genera en `dist/rosseta-script-a.exe`. Para usarlo:
+
+1. Copia `rosseta-script-a.exe` a una carpeta y pon un archivo `.env` **en la misma
+   carpeta** (usa `.env.example` como plantilla — el `.exe` lee el `.env` de su
+   propia carpeta, no del directorio actual).
+2. Necesita Chrome o Edge instalado (lo normal en Windows). No hace falta
+   `playwright install`: el bot usa el navegador del sistema vía `BROWSER_CHANNEL`
+   (`chrome` → `msedge` → Chromium de Playwright como último recurso).
+
 ## Contribución
 
 Si deseas contribuir, por favor abre un issue o pull request. Revisa la arquitectura en `docs/ARCHITECTURE.md` para entender el flujo interno.

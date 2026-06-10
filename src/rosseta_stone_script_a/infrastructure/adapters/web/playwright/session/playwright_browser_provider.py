@@ -55,11 +55,34 @@ class PlaywrightBrowserProvider(BrowserProviderPort, LoggingMixin):
         if self.enable_no_sandbox:
             launch_args.append("--no-sandbox")
 
-        self.browser = await self._playwright_instance.chromium.launch(
-            headless=self.headless,
-            slow_mo=self.slow_mo,
-            args=launch_args,
-        )
+        # Prefer a system-installed browser so a packaged .exe needs no
+        # `playwright install`. Order: BROWSER_CHANNEL (default chrome) ->
+        # msedge (always present on Windows) -> Playwright's bundled Chromium.
+        import os
+
+        preferred = os.getenv("BROWSER_CHANNEL", "chrome")
+        channels: list[str | None] = []
+        for ch in (preferred, "msedge", None):
+            if ch not in channels:
+                channels.append(ch)
+
+        last_error: Exception | None = None
+        for channel in channels:
+            try:
+                self.browser = await self._playwright_instance.chromium.launch(
+                    headless=self.headless,
+                    slow_mo=self.slow_mo,
+                    args=launch_args,
+                    channel=channel,
+                )
+                break
+            except Exception as exc:  # noqa: BLE001 - try the next channel
+                last_error = exc
+        if self.browser is None:
+            raise RuntimeError(
+                f"Could not launch a browser (tried channels {channels}). "
+                "Install Chrome/Edge or run 'playwright install chromium'."
+            ) from last_error
 
     async def stop(self) -> None:
         if self.browser:

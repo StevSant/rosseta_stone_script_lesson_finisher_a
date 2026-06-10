@@ -3,6 +3,10 @@ from typing import List, Union
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from rosseta_stone_script_a.infrastructure.core.base_dir import get_base_dir
+
+_ENV_FILE = str(get_base_dir() / ".env")
+
 
 class RosettaSettings(BaseSettings):
     rosetta_base_url: str = "https://www.rosettastone.com"
@@ -25,7 +29,7 @@ class RosettaSettings(BaseSettings):
         True  # Force re-complete even if marked as complete
     )
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
 
     @field_validator("rosetta_units_to_complete", mode="before")
     @classmethod
