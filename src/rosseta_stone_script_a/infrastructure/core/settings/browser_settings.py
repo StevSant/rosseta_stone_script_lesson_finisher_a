@@ -12,4 +12,6 @@ class BrowserSettings(BaseSettings):
         "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
     )
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_prefix="BROWSER_", extra="ignore"
+    )
