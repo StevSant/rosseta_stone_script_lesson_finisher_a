@@ -337,7 +337,7 @@ class CompleteFoundationsUseCase(UseCasePort):
             school_id=school_id,
             user_id=user_id,
             course=path.course,
-            unit_index=path.unit_index % 4,
+            unit_index=path.unit_index,
             lesson_index=path.curriculum_lesson_index,
             path_type=path.type,
             score_correct=questions_correct,
