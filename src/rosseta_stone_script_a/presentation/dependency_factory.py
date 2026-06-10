@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from rosseta_stone_script_a.application.orchestrators.complete_foundations_orchestrator import (
     CompleteFoundationsOrchestrator,
 )
@@ -39,9 +41,15 @@ class DependencyFactory:
         lessons_to_complete: list[int] = None,
         path_types_to_complete: list[str] = None,
         target_score_percent: int = 100,
-        max_start_time_offset_ms: int = 432000000,
+        max_start_time_offset_ms: int = 300000,
         inter_path_delay_ms: int = 500,
+        inter_path_delay_min_ms: int = 1500,
+        inter_path_delay_max_ms: int = 5000,
         force_recomplete: bool = False,
+        batch_min_paths: int = 6,
+        batch_max_paths: int = 14,
+        max_paths_per_day: int = 18,
+        state_dir: Path | None = None,
     ):
         self.web_session = web_session
         self.rosseta_login_url = rosseta_login_url
@@ -51,7 +59,13 @@ class DependencyFactory:
         self.target_score_percent = target_score_percent
         self.max_start_time_offset_ms = max_start_time_offset_ms
         self.inter_path_delay_ms = inter_path_delay_ms
+        self.inter_path_delay_min_ms = inter_path_delay_min_ms
+        self.inter_path_delay_max_ms = inter_path_delay_max_ms
         self.force_recomplete = force_recomplete
+        self.batch_min_paths = batch_min_paths
+        self.batch_max_paths = batch_max_paths
+        self.max_paths_per_day = max_paths_per_day
+        self.state_dir = state_dir
 
     def create_open_fundations(self) -> OpenFundations:
         """Create OpenFoundations orchestrator with dependencies."""
@@ -110,7 +124,13 @@ class DependencyFactory:
             target_score_percent=self.target_score_percent,
             max_start_time_offset_ms=self.max_start_time_offset_ms,
             inter_path_delay_ms=self.inter_path_delay_ms,
+            inter_path_delay_min_ms=self.inter_path_delay_min_ms,
+            inter_path_delay_max_ms=self.inter_path_delay_max_ms,
             force_recomplete=self.force_recomplete,
+            batch_min_paths=self.batch_min_paths,
+            batch_max_paths=self.batch_max_paths,
+            max_paths_per_day=self.max_paths_per_day,
+            state_dir=self.state_dir,
         )
 
         return CompleteFoundationsOrchestrator(

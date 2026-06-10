@@ -23,11 +23,21 @@ class RosettaSettings(BaseSettings):
 
     # Progress and timing settings
     rosetta_target_score_percent: int
-    rosetta_max_start_time_offset_ms: int = 432000000  # ~5 days
-    rosetta_inter_path_delay_ms: int = 500
+    rosetta_max_start_time_offset_ms: int = 300000  # ~5 minutos (era ~5 días)
+    rosetta_inter_path_delay_ms: int = 500  # legado — sustituido por min/max
+    rosetta_inter_path_delay_min_ms: int = 1500  # retraso mínimo entre paths (ms)
+    rosetta_inter_path_delay_max_ms: int = 5000  # retraso máximo entre paths (ms)
     rosetta_force_recomplete: bool = (
         True  # Force re-complete even if marked as complete
     )
+
+    # Configuración de lote por ejecución (modo humano gradual)
+    rosetta_batch_min_paths: int = 6   # mínimo de paths por ejecución
+    rosetta_batch_max_paths: int = 14  # máximo de paths por ejecución
+    rosetta_max_paths_per_day: int = 18  # tope diario total entre todas las ejecuciones
+
+    # Directorio de estado por cuenta (ruta relativa al directorio base)
+    rosetta_state_dir: str = "state"  # subcarpeta dentro del directorio base del bot
 
     model_config = SettingsConfigDict(env_file=_ENV_FILE, extra="ignore")
 

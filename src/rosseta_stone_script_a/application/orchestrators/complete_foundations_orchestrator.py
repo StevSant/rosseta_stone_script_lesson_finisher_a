@@ -55,12 +55,14 @@ class CompleteFoundationsOrchestrator(OrchestratorPort):
             return
 
         self.logger.info("Session data captured successfully. Starting completion...")
+        email = (captured_data.get("credentials") or {}).get("email")
         stats = await self.complete_foundations_use_case.execute(
             authorization=captured_data["authorization"],
             language_code=captured_data["lang_code"],
             session_token=captured_data["session_token"],
             school_id=captured_data["school_id"],
             user_id=captured_data["user_id"],
+            email=email,
         )
 
         # Generate completion report using services
