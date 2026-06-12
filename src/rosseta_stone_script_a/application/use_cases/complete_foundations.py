@@ -351,7 +351,13 @@ class CompleteFoundationsUseCase(UseCasePort):
             school_id=school_id,
             user_id=user_id,
             course=path.course,
-            unit_index=path.unit_index,
+            # The course menu numbers units globally (0-19 across all 5 levels),
+            # but each `course` (SK-ENG-L{1..5}) is a standalone level with only
+            # 4 units. The path_scores endpoint expects the per-course unit index
+            # (0-3), so reduce the global index mod 4. Without this, only Level 1
+            # (units 0-3) registers; L2-L5 write to nonexistent coordinates and
+            # never reflect as real progress in Rosetta.
+            unit_index=path.unit_index % 4,
             lesson_index=path.curriculum_lesson_index,
             path_type=path.type,
             score_correct=questions_correct,
