@@ -39,6 +39,7 @@ class CompleteFoundationsUseCase(UseCasePort):
         inter_path_delay_min_ms: int = 1500,
         inter_path_delay_max_ms: int = 5000,
         force_recomplete: bool = False,
+        human_mode: bool = False,
         batch_min_paths: int = 6,
         batch_max_paths: int = 14,
         max_paths_per_day: int = 18,
@@ -65,6 +66,9 @@ class CompleteFoundationsUseCase(UseCasePort):
         # Legacy single value — only used if min==max==500 (the old default)
         self.inter_path_delay_ms = inter_path_delay_ms
 
+        # Fast by default: complete every eligible path in one run, no delays.
+        # Human mode applies the batch/daily caps and inter-path pauses below.
+        self.human_mode = human_mode
         self.batch_min_paths = batch_min_paths
         self.batch_max_paths = max(batch_max_paths, batch_min_paths)
         self.max_paths_per_day = max_paths_per_day
@@ -104,25 +108,29 @@ class CompleteFoundationsUseCase(UseCasePort):
         state: RunProgressState = self._state_store.load(user_id, email)
         state.touch_last_run()
 
-        # --- Daily cap check ---
-        done_today = state.count_done_today()
-        if done_today >= self.max_paths_per_day:
+        # --- Pick how many paths to submit this run ---
+        if self.human_mode:
+            # Daily cap check (human mode only).
+            done_today = state.count_done_today()
+            if done_today >= self.max_paths_per_day:
+                self.logger.info(
+                    f"Daily cap reached ({done_today}/{self.max_paths_per_day} paths already "
+                    f"completed today). Exiting without doing anything."
+                )
+                state.save()
+                return self.stats
+
+            remaining_today = self.max_paths_per_day - done_today
+            raw_budget = random.randint(self.batch_min_paths, self.batch_max_paths)
+            run_budget = min(raw_budget, remaining_today)
             self.logger.info(
-                f"Daily cap reached ({done_today}/{self.max_paths_per_day} paths already "
-                f"completed today). Exiting without doing anything."
+                f"Run budget: {run_budget} paths "
+                f"(batch={raw_budget}, daily_remaining={remaining_today})"
             )
-            state.save()
-            return self.stats
-
-        remaining_today = self.max_paths_per_day - done_today
-
-        # --- Pick batch size for this run ---
-        raw_budget = random.randint(self.batch_min_paths, self.batch_max_paths)
-        run_budget = min(raw_budget, remaining_today)
-        self.logger.info(
-            f"Run budget: {run_budget} paths "
-            f"(batch={raw_budget}, daily_remaining={remaining_today})"
-        )
+        else:
+            # Fast mode: no batch/daily cap — submit every eligible path.
+            run_budget = None
+            self.logger.info("Fast mode: completing all eligible paths this run.")
 
         self.logger.info("Starting Foundations completion process...")
         if self.content_filter.units_to_complete:
@@ -217,8 +225,8 @@ class CompleteFoundationsUseCase(UseCasePort):
                 self.stats.total_paths_failed += 1
                 self.stats.failed_paths.append(result)
 
-            # Inter-path delay (skip after last path)
-            if idx < len(prepared) - 1:
+            # Inter-path delay (human mode only; skipped after the last path)
+            if self.human_mode and idx < len(prepared) - 1:
                 delay_ms = random.randint(
                     self.inter_path_delay_min_ms,
                     self.inter_path_delay_max_ms,
@@ -251,30 +259,36 @@ class CompleteFoundationsUseCase(UseCasePort):
         self,
         course_menu,
         state: RunProgressState,
-        budget: int,
+        budget: int | None,
     ) -> list[RosettaPath]:
         """
         Walk the course menu and collect up to *budget* paths to submit this
         run, skipping paths already recorded in state or removed by filters.
+
+        A *budget* of ``None`` means unlimited (fast mode): collect every
+        eligible, not-yet-done path.
         """
         batch: list[RosettaPath] = []
 
+        def _full() -> bool:
+            return budget is not None and len(batch) >= budget
+
         for unit in course_menu.units:
-            if len(batch) >= budget:
+            if _full():
                 break
 
             if not self.content_filter.should_process_unit(unit):
                 continue
 
             for lesson in unit.lessons:
-                if len(batch) >= budget:
+                if _full():
                     break
 
                 if not self.content_filter.should_process_lesson(lesson):
                     continue
 
                 for path in lesson.paths:
-                    if len(batch) >= budget:
+                    if _full():
                         break
 
                     if not self.content_filter.should_process_path(path):

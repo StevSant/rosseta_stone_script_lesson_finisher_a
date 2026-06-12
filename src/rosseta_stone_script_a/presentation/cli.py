@@ -4,8 +4,7 @@ from typing import Optional, Union
 
 from rosseta_stone_script_a.domain.entities.credentials import Credentials
 from rosseta_stone_script_a.infrastructure.adapters.web import PlaywrightBrowserProvider
-from rosseta_stone_script_a.infrastructure.core import settings
-from rosseta_stone_script_a.infrastructure.core.base_dir import get_base_dir
+from rosseta_stone_script_a.infrastructure.core import get_base_dir, get_settings
 from rosseta_stone_script_a.shared.mixins import LoggingMixin
 
 from .dependency_factory import DependencyFactory
@@ -28,6 +27,7 @@ class RosettaCLI(LoggingMixin):
         inter_path_delay_min_ms: int = 1500,
         inter_path_delay_max_ms: int = 5000,
         force_recomplete: bool = False,
+        human_mode: bool = False,
         batch_min_paths: int = 6,
         batch_max_paths: int = 14,
         max_paths_per_day: int = 18,
@@ -37,7 +37,7 @@ class RosettaCLI(LoggingMixin):
         Run a hierarchical learning session following Course → Lesson → Activity flow.
         This follows the proper Rosetta Stone hierarchy.
         """
-        browser_settings = settings.browser_settings
+        browser_settings = get_settings().browser_settings
 
         provider = PlaywrightBrowserProvider(
             headless=browser_settings.headless,
@@ -69,6 +69,7 @@ class RosettaCLI(LoggingMixin):
                     inter_path_delay_min_ms=inter_path_delay_min_ms,
                     inter_path_delay_max_ms=inter_path_delay_max_ms,
                     force_recomplete=force_recomplete,
+                    human_mode=human_mode,
                     batch_min_paths=batch_min_paths,
                     batch_max_paths=batch_max_paths,
                     max_paths_per_day=max_paths_per_day,
@@ -100,7 +101,7 @@ class RosettaCLI(LoggingMixin):
 
         Por defecto ejecuta una sesión completa de aprendizaje.
         """
-        rosseta_settings = settings.rosseta_settings
+        rosseta_settings = get_settings().rosseta_settings
         user_credentials = Credentials(
             email=rosseta_settings.rosetta_email,
             password=rosseta_settings.rosetta_password,
@@ -121,6 +122,7 @@ class RosettaCLI(LoggingMixin):
                 inter_path_delay_min_ms=rosseta_settings.rosetta_inter_path_delay_min_ms,
                 inter_path_delay_max_ms=rosseta_settings.rosetta_inter_path_delay_max_ms,
                 force_recomplete=rosseta_settings.rosetta_force_recomplete,
+                human_mode=rosseta_settings.rosetta_human_mode,
                 batch_min_paths=rosseta_settings.rosetta_batch_min_paths,
                 batch_max_paths=rosseta_settings.rosetta_batch_max_paths,
                 max_paths_per_day=rosseta_settings.rosetta_max_paths_per_day,

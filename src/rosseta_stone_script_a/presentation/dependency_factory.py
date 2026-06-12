@@ -46,6 +46,7 @@ class DependencyFactory:
         inter_path_delay_min_ms: int = 1500,
         inter_path_delay_max_ms: int = 5000,
         force_recomplete: bool = False,
+        human_mode: bool = False,
         batch_min_paths: int = 6,
         batch_max_paths: int = 14,
         max_paths_per_day: int = 18,
@@ -62,6 +63,7 @@ class DependencyFactory:
         self.inter_path_delay_min_ms = inter_path_delay_min_ms
         self.inter_path_delay_max_ms = inter_path_delay_max_ms
         self.force_recomplete = force_recomplete
+        self.human_mode = human_mode
         self.batch_min_paths = batch_min_paths
         self.batch_max_paths = batch_max_paths
         self.max_paths_per_day = max_paths_per_day
@@ -127,6 +129,7 @@ class DependencyFactory:
             inter_path_delay_min_ms=self.inter_path_delay_min_ms,
             inter_path_delay_max_ms=self.inter_path_delay_max_ms,
             force_recomplete=self.force_recomplete,
+            human_mode=self.human_mode,
             batch_min_paths=self.batch_min_paths,
             batch_max_paths=self.batch_max_paths,
             max_paths_per_day=self.max_paths_per_day,
