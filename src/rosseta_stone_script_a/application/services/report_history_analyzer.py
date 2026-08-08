@@ -31,9 +31,12 @@ class ReportHistoryAnalyzer(LoggingMixin):
         completed_units = set()
         try:
             content = report_path.read_text(encoding="utf-8")
-            # Look for the line with units completed
+            # Match both the current label and the legacy one so old reports
+            # keep contributing to history.
             match = re.search(
-                r"Units Completed \(this session\):\s*\[([^\]]+)\]", content
+                r"Units (?:Fully Completed \(cumulative\)|Completed \(this session\)):"
+                r"\s*\[([^\]]+)\]",
+                content,
             )
             if match:
                 units_str = match.group(1)

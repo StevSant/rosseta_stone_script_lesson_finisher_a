@@ -160,6 +160,7 @@ class CompleteFoundationsUseCase(UseCasePort):
 
         # 2. Collect the batch of paths to submit this run
         batch = self._collect_batch(course_menu, state, run_budget)
+        self._record_batch_stats(batch)
 
         self.logger.info(
             f"Batch collected: {len(batch)} paths to submit this run "
@@ -173,6 +174,9 @@ class CompleteFoundationsUseCase(UseCasePort):
                 f"This run: completed 0 paths, {state.total_done()} already done, "
                 f"{remaining_in_course} remaining in course; "
                 "course may be fully complete or all remaining paths filtered."
+            )
+            self.stats.units_completed = sorted(
+                self._derive_completed_units(course_menu, state)
             )
             state.save()
             return self.stats
@@ -236,6 +240,12 @@ class CompleteFoundationsUseCase(UseCasePort):
 
         # Final save and summary
         state.save()
+        self.stats.units_completed = sorted(
+            self._derive_completed_units(course_menu, state)
+        )
+        self.logger.info(
+            f"Units fully completed (state + Rosetta): {self.stats.units_completed}"
+        )
         remaining_in_course = max(0, total_eligible - state.total_done())
         self.logger.info(
             f"This run: completed {paths_this_run} paths, "
@@ -309,10 +319,40 @@ class CompleteFoundationsUseCase(UseCasePort):
                             f"    Processing {path.type}: {path.percent_complete}% complete"
                         )
 
-                    self.stats.total_lessons_processed += 1
                     batch.append(path)
 
         return batch
+
+    def _record_batch_stats(self, batch: list[RosettaPath]) -> None:
+        """Record how many distinct units/lessons this run's batch touches."""
+        self.stats.total_units_processed = len({p.unit_index for p in batch})
+        self.stats.total_lessons_processed = len(
+            {(p.unit_index, p.lesson_index) for p in batch}
+        )
+
+    def _derive_completed_units(
+        self, course_menu, state: RunProgressState
+    ) -> set[int]:
+        """
+        Return the unit numbers whose every path is done.
+
+        A path counts as done when it is recorded in the persisted state
+        (completed by this bot, possibly across several runs) or when Rosetta
+        already reports it 100% complete. State is the source of truth, so the
+        result is cumulative rather than per-session.
+        """
+        completed: set[int] = set()
+        for unit in course_menu.units:
+            paths = [p for lesson in unit.lessons for p in lesson.paths]
+            if not paths:
+                continue
+            if all(
+                state.is_done(make_path_key(p))
+                or (p.complete and p.percent_complete >= 100)
+                for p in paths
+            ):
+                completed.add(unit.unit_number)
+        return completed
 
     def _count_eligible_paths(self, course_menu, state: RunProgressState) -> int:
         """Count paths that pass content filters (regardless of state)."""

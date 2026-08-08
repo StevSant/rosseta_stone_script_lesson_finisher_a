@@ -43,7 +43,7 @@ class ReportGenerator(LoggingMixin):
         file_name = f"{safe_name}_{timestamp}.txt"
         file_path = self.output_dir / file_name
 
-        # Current session completed units
+        # Units fully complete per persisted state (cumulative across runs)
         current_completed = set(stats.units_completed)
 
         # All completed units (history + current)
@@ -140,7 +140,7 @@ class ReportGenerator(LoggingMixin):
             "COMPLETION STATISTICS (THIS SESSION)",
             "-" * 40,
             f"  Units Processed: {stats.total_units_processed}",
-            f"  Units Completed (this session): {sorted(stats.units_completed)}",
+            f"  Units Fully Completed (cumulative): {sorted(stats.units_completed)}",
             f"  Lessons Processed: {stats.total_lessons_processed}",
             f"  Paths Attempted: {stats.total_paths_completed}",
             f"  Paths Succeeded (API 2xx): {stats.total_paths_succeeded}",
